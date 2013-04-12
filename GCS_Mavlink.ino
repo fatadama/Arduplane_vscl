@@ -655,6 +655,13 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
         CHECK_PAYLOAD_SIZE(WIND);
         send_wind(chan);
         break;
+		
+    //VSCL new msg transmission:
+    case MSG_VSCL_TEST:
+	CHECK_PAYLOAD_SIZE(VSCL_TEST);//automatically parses argument into MAVLINK_MSG_ID_arg_
+	//send command here
+	mavlink_msg_vscl_test_send(chan,24);//transmit a 24 back always
+	break;
 
     case MSG_RETRY_DEFERRED:
         break; // just here to prevent a warning
@@ -1892,16 +1899,18 @@ mission_failed:
         break;
     }
 
-#VSCL: add a case to process custom MAVlink telemetry:
-	case MAVLINK_MSG_ID_VSCL_TEST:
-		#bounce the same signal back for confirmation
-		//mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, packet.dummy);
-		mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, 1);
-		if (gcs3.initialised) {
-			mavlink_send_message(MAVLINK_COMM_1, MAVLINK_MSG_ID_VSCL_TEST, 1);
-		}
-		break;
-	
+//VSCL: add a case to process custom MAVlink telemetry:
+    case MAVLINK_MSG_ID_VSCL_TEST:
+    {
+        //bounce the same signal back for confirmation
+        //mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, packet.dummy);
+        //have to add some kind of global that the vehicle can bounce back from this workspace without being passed.
+	mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_TEST, 0);
+	if (gcs3.initialised) {
+		mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_TEST, 0);
+	}
+	break;
+    }	
     default:
         // forward unknown messages to the other link if there is one
         if ((chan == MAVLINK_COMM_1 && gcs0.initialised) ||

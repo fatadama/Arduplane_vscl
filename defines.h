@@ -123,6 +123,7 @@ enum ap_message {
     MSG_SIMSTATE,
     MSG_HWSTATUS,
     MSG_WIND,
+	MSG_VSCL_TEST,//VSCL added cmd for new msg id
     MSG_RETRY_DEFERRED // this must be last
 };
 
