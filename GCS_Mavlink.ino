@@ -1892,6 +1892,16 @@ mission_failed:
         break;
     }
 
+#VSCL: add a case to process custom MAVlink telemetry:
+	case MAVLINK_MSG_ID_VSCL_TEST:
+		#bounce the same signal back for confirmation
+		//mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, packet.dummy);
+		mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, 1);
+		if (gcs3.initialised) {
+			mavlink_send_message(MAVLINK_COMM_1, MAVLINK_MSG_ID_VSCL_TEST, 1);
+		}
+		break;
+	
     default:
         // forward unknown messages to the other link if there is one
         if ((chan == MAVLINK_COMM_1 && gcs0.initialised) ||
