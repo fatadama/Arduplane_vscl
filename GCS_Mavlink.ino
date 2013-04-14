@@ -660,7 +660,7 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
     case MSG_VSCL_TEST:
 	CHECK_PAYLOAD_SIZE(VSCL_TEST);//automatically parses argument into MAVLINK_MSG_ID_arg_
 	//send command here
-	mavlink_msg_vscl_test_send(chan,24);//transmit a 24 back always
+	mavlink_msg_vscl_test_send(chan,VSCL_PHI);//transmit the current bank angle back
 	break;
 
     case MSG_RETRY_DEFERRED:
@@ -1902,9 +1902,9 @@ mission_failed:
 //VSCL: add a case to process custom MAVlink telemetry:
     case MAVLINK_MSG_ID_VSCL_TEST:
     {
-        //bounce the same signal back for confirmation
-        //mavlink_send_message(MAVLINK_COMM_0, MAVLINK_MSG_ID_VSCL_TEST, packet.dummy);
-        //have to add some kind of global that the vehicle can bounce back from this workspace without being passed.
+	//update the vscl commanded bank angle with the new transmission:
+	VSCL_PHI += mavlink_msg_vscl_test_get_dummy(msg);
+        //bounce the current commanded bank angle back for confirmation
 	mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_TEST, 0);
 	if (gcs3.initialised) {
 		mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_TEST, 0);

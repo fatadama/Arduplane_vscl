@@ -676,6 +676,9 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 //pinMode(camtrig, OUTPUT);			// these are free pins PE3(5), PH3(15), PH6(18), PB4(23), PB5(24), PL1(36), PL3(38), PA6(72), PA7(71), PK0(89), PK1(88), PK2(87), PK3(86), PK4(83), PK5(84), PK6(83), PK7(82)
 #endif
 
+//VSCL globals: VSCL_PHI: commanded bank angle from the ground
+byte VSCL_PHI = 0;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level logic
 ////////////////////////////////////////////////////////////////////////////////
