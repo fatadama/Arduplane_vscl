@@ -159,6 +159,7 @@ static NOINLINE void send_extended_status1(mavlink_channel_t chan, uint16_t pack
     case FLY_BY_WIRE_B:
         control_sensors_enabled |= (1<<10); // 3D angular rate control
         control_sensors_enabled |= (1<<11); // attitude stabilisation
+		control_sensors_enabled |= (1<<13); // altitude control VSCL added to reflect
         control_sensors_enabled |= (1<<15); // motor control
         break;
 

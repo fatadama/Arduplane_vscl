@@ -64,14 +64,11 @@ static void calc_airspeed_errors()
     float aspeed_cm = airspeed.get_airspeed_cm();
 
     // Normal airspeed target
-    target_airspeed_cm = g.airspeed_cruise_cm;
+    target_airspeed_cm = g.airspeed_cruise_cm;//this value should be 11 m/s (VSCL target for FBWB)
 
-    // FBW_B airspeed target
+    // VSCL FBW_B airspeed target
     if (control_mode == FLY_BY_WIRE_B) {
-        target_airspeed_cm = ((int)(g.flybywire_airspeed_max -
-                                    g.flybywire_airspeed_min) *
-                              g.channel_throttle.servo_out) +
-                             ((int)g.flybywire_airspeed_min * 100);
+        target_airspeed_cm = 11*100;//1100 cm/s??
     }
 
     // Set target to current airspeed + ground speed undershoot,
