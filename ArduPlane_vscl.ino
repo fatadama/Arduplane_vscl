@@ -677,7 +677,7 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 #endif
 
 //VSCL globals: VSCL_PHI: commanded bank angle from the ground
-int VSCL_PHI = 0;
+int16_t VSCL_PHI = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level logic
