@@ -1904,8 +1904,8 @@ mission_failed:
     case MAVLINK_MSG_ID_VSCL_TEST:
     {
 	//update the vscl commanded bank angle with the new transmission:
-	VSCL_PHI += mavlink_msg_vscl_test_get_dummy(msg);
-        //bounce the current commanded bank angle back for confirmation
+	VSCL_PHI = mavlink_msg_vscl_test_get_dummy(msg);
+    //bounce the current commanded bank angle back for confirmation
 	mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_TEST, 0);
 	if (gcs3.initialised) {
 		mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_TEST, 0);

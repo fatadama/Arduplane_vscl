@@ -678,6 +678,8 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 
 //VSCL globals: VSCL_PHI: commanded bank angle from the ground
 int16_t VSCL_PHI = 0;
+int16_t VSCL_SPD = 1100;//11 m/s by default
+int16_t VSCL_ALT = 6069;//60.69 m by default
 
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level logic
@@ -1146,8 +1148,9 @@ static void update_current_flight_mode(void)
 			nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
 		
 			
-			//I believe the following line will try to drive the altitude to the "home" altitude plus the offset from the FBWB_min param.
-			altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
+			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus the offset from the FBWB_min param.
+			//altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
+			altitude_error_cm = home.alt - adjusted_altitude_cm() + VSCL_ALT;
             calc_throttle();
             calc_nav_pitch();
             break;
