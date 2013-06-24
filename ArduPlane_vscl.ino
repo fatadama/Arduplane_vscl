@@ -1148,7 +1148,7 @@ static void update_current_flight_mode(void)
 			nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
 		
 			
-			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus the offset from the FBWB_min param.
+			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus an offset from the initialization point
 			//altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
 			altitude_error_cm = home.alt - adjusted_altitude_cm() + VSCL_ALT;
             calc_throttle();

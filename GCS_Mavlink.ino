@@ -663,6 +663,10 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 	//send command here
 	mavlink_msg_vscl_test_send(chan,VSCL_PHI);//transmit the current bank angle back
 	break;
+	
+	case MSG_VSCL_BUMP:
+	//this is when SENDING a bump message
+	break;
 
     case MSG_RETRY_DEFERRED:
         break; // just here to prevent a warning
@@ -1911,7 +1915,23 @@ mission_failed:
 		mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_TEST, 0);
 	}
 	break;
-    }	
+    }
+	case MSVLINK_MSG_ID_VSCL_BUMP:
+	{
+	//read the bump ID:
+	unsigned int bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
+	//adjust the appropriate value:
+		if(bumpID==0)
+		{
+			//bump altitude with the value from message
+			VSCL_ALT += mavlink_msg_vscl_bump_get_bumpval(msg);
+		}
+		else if(bumpID==1)
+		{
+			//bump airspeed target:
+			VSCL_SPD += mavlink_msg_vscl_bump_get_bumpval(msg);
+		}
+	}
     default:
         // forward unknown messages to the other link if there is one
         if ((chan == MAVLINK_COMM_1 && gcs0.initialised) ||

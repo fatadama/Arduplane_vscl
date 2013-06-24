@@ -38,7 +38,8 @@ static float get_speed_scaler(void)
  */
 static bool stick_mixing_enabled(void)
 {
-    if (control_mode == CIRCLE || control_mode > FLY_BY_WIRE_B) {
+//VSCL: modified the following line to INCLUDE FBWB as a stick_mixing mode
+    if (control_mode == CIRCLE || control_mode >= FLY_BY_WIRE_B) {
         // we're in an auto mode. Check the stick mixing flag
         if (g.stick_mixing &&
             geofence_stickmixing() &&
@@ -97,8 +98,8 @@ static void stabilize()
     // Mix Stick input to allow users to override control surfaces
     // -----------------------------------------------------------
     if (stick_mixing_enabled()) {
-        if (control_mode != FLY_BY_WIRE_A && 
-            control_mode != FLY_BY_WIRE_B) {
+	//VSCL modified the below to remove "!= FLY_BY_WIRE_B" to feedthrough pilot commands in FBWB:
+        if (control_mode != FLY_BY_WIRE_A) {
             // do stick mixing on aileron/elevator if not in a fly by
             // wire mode
             ch1_inf = (float)g.channel_roll.radio_in - (float)g.channel_roll.radio_trim;
