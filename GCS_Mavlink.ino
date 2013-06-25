@@ -1916,7 +1916,7 @@ mission_failed:
 	}
 	break;
     }
-	case MSVLINK_MSG_ID_VSCL_BUMP:
+	case MAVLINK_MSG_ID_VSCL_BUMP:
 	{
 	//read the bump ID:
 	unsigned int bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
