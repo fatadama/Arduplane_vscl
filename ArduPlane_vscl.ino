@@ -787,7 +787,11 @@ static void fast_loop()
     // apply desired roll, pitch and yaw to the plane
     // ----------------------------------------------
     if (control_mode > MANUAL)
+	{
         stabilize();
+		//send VSCL_TEST msg to indicate to the GCS that we have updated the control
+		gcs_send_message(MSG_VSCL_TEST);
+	}
 
     // write out the servo PWM values
     // ------------------------------
