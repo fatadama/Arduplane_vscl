@@ -1916,7 +1916,7 @@ mission_failed:
 	}
 	break;
     }
-	case MSVLINK_MSG_ID_VSCL_BUMP:
+	case MAVLINK_MSG_ID_VSCL_BUMP:
 	{
 	//read the bump ID:
 	unsigned int bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
@@ -1931,6 +1931,7 @@ mission_failed:
 			//bump airspeed target:
 			VSCL_SPD += mavlink_msg_vscl_bump_get_bumpval(msg);
 		}
+		break;
 	}
     default:
         // forward unknown messages to the other link if there is one
