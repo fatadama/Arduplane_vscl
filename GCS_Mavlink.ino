@@ -664,8 +664,20 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 	mavlink_msg_vscl_test_send(chan,VSCL_PHI);//transmit the current bank angle back
 	break;
 	
-	case MSG_VSCL_BUMP:
+    case MSG_VSCL_BUMP:
 	//this is when SENDING a bump message
+	//send airspeed target
+	CHECK_PAYLOAD_SIZE(VSCL_BUMP);
+	mavlink_msg_vscl_bump_send(chan,VSCL_SPD,1);
+	//send altitude target
+	CHECK_PAYLOAD_SIZE(VSCL_BUMP);
+	mavlink_msg_vscl_bump_send(chan,VSCL_ALT,0);
+	break;
+	
+	case MSG_VSCL_CONTROLS:
+	//sending a controls message
+	CHECK_PAYLOAD_SIZE(VSCL_CONTROLS);
+	mavlink_msg_vscl_controls_send(chan,g.channel_pitch.radio_out,g.channel_throttle.radio_out,g.channel_roll.radio_out,g.channel_rudder.radio_out);
 	break;
 
     case MSG_RETRY_DEFERRED:
@@ -1916,22 +1928,28 @@ mission_failed:
 	}
 	break;
     }
-	case MSVLINK_MSG_ID_VSCL_BUMP:
-	{
-	//read the bump ID:
-	unsigned int bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
+    case MAVLINK_MSG_ID_VSCL_BUMP:
+    {
+    //read the bump ID:
+        uint8_t bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
 	//adjust the appropriate value:
-		if(bumpID==0)
-		{
-			//bump altitude with the value from message
-			VSCL_ALT += mavlink_msg_vscl_bump_get_bumpval(msg);
-		}
-		else if(bumpID==1)
-		{
-			//bump airspeed target:
-			VSCL_SPD += mavlink_msg_vscl_bump_get_bumpval(msg);
-		}
+	if(bumpID==0)
+	{
+	    //bump altitude with the value from message
+	    VSCL_ALT += mavlink_msg_vscl_bump_get_bumpval(msg);
+	    //bounce back BUMP messsage with current value of VSCL_ALT as confirmation:
+        }
+	if(bumpID==1)
+	{
+	    //bump airspeed target:
+	    VSCL_SPD += mavlink_msg_vscl_bump_get_bumpval(msg);
 	}
+    //bounce back BUMP messsage with current value of VSCL_SPD as confirmation:
+      mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_BUMP, 0);
+      if (gcs3.initialised) {
+          mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_BUMP, 0);
+      }
+    }
     default:
         // forward unknown messages to the other link if there is one
         if ((chan == MAVLINK_COMM_1 && gcs0.initialised) ||

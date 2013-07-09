@@ -123,8 +123,9 @@ enum ap_message {
     MSG_SIMSTATE,
     MSG_HWSTATUS,
     MSG_WIND,
-	MSG_VSCL_TEST,//VSCL added cmd for new msg id
-	MSG_VSCL_BUMP,//new command to bump alt/airspeed
+    MSG_VSCL_TEST,//VSCL added cmd for new msg id
+    MSG_VSCL_BUMP,//new command to bump alt/airspeed
+	MSG_VSCL_CONTROLS,//command to transmit control deflections
     MSG_RETRY_DEFERRED // this must be last
 };
 

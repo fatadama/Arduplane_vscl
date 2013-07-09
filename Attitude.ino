@@ -38,8 +38,8 @@ static float get_speed_scaler(void)
  */
 static bool stick_mixing_enabled(void)
 {
-//VSCL: modified the following line to INCLUDE FBWB as a stick_mixing mode
-    if (control_mode == CIRCLE || control_mode >= FLY_BY_WIRE_B) {
+//VSCL: disabled stick mixing in FBWB in the controls_testing mode
+    if (control_mode == CIRCLE || control_mode > FLY_BY_WIRE_B) {
         // we're in an auto mode. Check the stick mixing flag
         if (g.stick_mixing &&
             geofence_stickmixing() &&
@@ -49,6 +49,10 @@ static bool stick_mixing_enabled(void)
         } else {
             return false;
         }
+    }
+    else if (control_mode == FLY_BY_WIRE_B)
+    {
+      return false;
     }
     // non-auto mode. Always do stick mixing
     return true;
@@ -388,7 +392,47 @@ static void set_servos(void)
             RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler1, g.channel_roll.radio_out);
             RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler2, g.channel_pitch.radio_out);
         }
-    } else {
+    } else if(control_mode == FLY_BY_WIRE_B) {
+		//VSCL - COMPUTE controls here but DO NOT implement
+		//calc_pwn sets the radio_out value. Can I just call calc_pwn, then pass through afterwards to overwrite??
+		if (g.mix_mode == 0) {
+            // both types of secondary aileron are slaved to the roll servo out
+            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, g.channel_roll.servo_out);
+            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron_with_input, g.channel_roll.servo_out);
+        }
+		if (g.mix_mode == 0) {
+            g.channel_roll.calc_pwm();
+            g.channel_pitch.calc_pwm();
+        }
+		g.channel_rudder.calc_pwm();
+
+#if THROTTLE_OUT == 0
+        g.channel_throttle.servo_out = 0;
+#else
+        // convert 0 to 100% into PWM
+        g.channel_throttle.servo_out = constrain(g.channel_throttle.servo_out,g.throttle_min.get(),g.throttle_max.get());
+		g.channel_throttle.calc_pwm();
+#endif
+		//throttle slew limit in FBWB mode:
+		throttle_slew_limit(last_throttle);
+		
+		//now I need to transmit these messages to the grnd
+		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
+      if (gcs3.initialised) {
+          mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
+      }
+		//MANUAL OVERRIDES:
+		//roll,pitch
+		g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
+        g.channel_pitch.radio_out               = APM_RC.InputCh(CH_PITCH);
+		//secondary aileron?
+		int16_t aileron_in = g.channel_roll.pwm_to_angle_dz(0);
+        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, aileron_in);
+		//now pass through values directly as in MANUAL mode
+		g.channel_throttle.radio_out    = g.channel_throttle.radio_in;
+        g.channel_rudder.radio_out              = g.channel_rudder.radio_in;
+	}
+	  else {
         if (g.mix_mode == 0) {
             // both types of secondary aileron are slaved to the roll servo out
             RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, g.channel_roll.servo_out);

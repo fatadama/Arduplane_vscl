@@ -787,11 +787,7 @@ static void fast_loop()
     // apply desired roll, pitch and yaw to the plane
     // ----------------------------------------------
     if (control_mode > MANUAL)
-	{
         stabilize();
-		//send VSCL_TEST msg to indicate to the GCS that we have updated the control
-		gcs_send_message(MSG_VSCL_TEST);
-	}
 
     // write out the servo PWM values
     // ------------------------------
@@ -1142,13 +1138,7 @@ static void update_current_flight_mode(void)
         }
 
         case FLY_BY_WIRE_B:
-            // Substitute stick inputs for Navigation control output
-            // We use g.pitch_limit_min because its magnitude is
-            // normally greater than g.pitch_limit_max
-
-            // Thanks to Yury MonZon for the altitude limit code!
-
-            //nav_roll_cd = g.channel_roll.norm_input() * g.roll_limit_cd;
+            // command VSCL bank angle:
 			nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
 		
 			
