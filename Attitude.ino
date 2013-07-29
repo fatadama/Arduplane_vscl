@@ -38,8 +38,8 @@ static float get_speed_scaler(void)
  */
 static bool stick_mixing_enabled(void)
 {
-//VSCL: disabled stick mixing in FBWB in the controls_testing mode
-    if (control_mode == CIRCLE || control_mode > FLY_BY_WIRE_B) {
+//VSCL: enabled stick mixing in autoland mode
+    if (control_mode == CIRCLE || control_mode >= FLY_BY_WIRE_B) {
         // we're in an auto mode. Check the stick mixing flag
         if (g.stick_mixing &&
             geofence_stickmixing() &&
@@ -50,10 +50,6 @@ static bool stick_mixing_enabled(void)
             return false;
         }
     }
-    else if (control_mode == FLY_BY_WIRE_B)
-    {
-      return false;
-    }
     // non-auto mode. Always do stick mixing
     return true;
 }
@@ -61,6 +57,29 @@ static bool stick_mixing_enabled(void)
 
 static void stabilize()
 {
+	if (control_mode == FLY_BY_WIRE_B)
+	{
+		//autoland
+		//compute roll
+		//g.channel_roll.servo_out = localizer_cmd(lambda,ahrs.yaw_sensor,ahrs.roll_sensor,x);
+		//g.channel_roll.servo_out = g.channel_roll.servo_out.angle_to_pwm();
+		//ahrs values are in centidegrees, convert gains to match!!
+		if (!VSCL_FLARE && current_loc.alt < 400)//4.00 m is the flare height
+		{
+			VSCL_FLARE = 1;
+		}
+		if (!VSCL_FLARE)
+		{
+			//compute elevator
+			//g.channel_pitch.servo_out = glideslope_cmd(gammaRef,gamma,ahrs.pitch_sensor);
+			//g.channel_pitch.servo_out = g.channel_pitch.servo_out.angle_to_pwm()
+		}
+		else 
+		{
+			//flare
+		}
+		return;
+	}
     float ch1_inf = 1.0;
     float ch2_inf = 1.0;
     float ch4_inf = 1.0;
@@ -161,6 +180,17 @@ static void crash_checker()
 
 static void calc_throttle()
 {
+	//autoland calc_throttle()
+	if (control_mode == FLY_BY_WIRE_B)
+	{
+		//below is throttle out AS PERCENTILE
+		g.channel_throttle.servo_out =  airspeed_cmd(0,airspeed_error_cm);
+		g.channel_throttle.servo_out += .6329;
+		//NEED TO CONVERT THROTTLE TO RADIO VALUES
+		//constrain output
+		g.channel_throttle.servo_out = constrain(g.channel_throttle.servo_out, g.throttle_min.get(), g.throttle_max.get());
+		return;
+	}
     if (!alt_control_airspeed()) {
         int16_t throttle_target = g.throttle_cruise + throttle_nudge;
 
@@ -394,7 +424,6 @@ static void set_servos(void)
         }
     } else if(control_mode == FLY_BY_WIRE_B) {
 		//VSCL - COMPUTE controls here but DO NOT implement
-		//calc_pwn sets the radio_out value. Can I just call calc_pwn, then pass through afterwards to overwrite??
 		if (g.mix_mode == 0) {
                     // both types of secondary aileron are slaved to the roll servo out
                     RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, g.channel_roll.servo_out);
@@ -409,19 +438,18 @@ static void set_servos(void)
 #if THROTTLE_OUT == 0
                 g.channel_throttle.servo_out = 0;
 #else
-                // convert 0 to 100% into PWM
-                g.channel_throttle.servo_out = constrain(g.channel_throttle.servo_out,g.throttle_min.get(),g.throttle_max.get());
+                // convert 0 to 100%? into PWM
 		g.channel_throttle.calc_pwm();
 #endif
 		//throttle slew limit in FBWB mode:
 		throttle_slew_limit(last_throttle);
 		
-		//now I need to transmit these messages to the grnd
+		//now I need to transmit these messages to the ground
 		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
                 if (gcs3.initialised) {
                   mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
                 }
-	//MANUAL OVERRIDES:
+	//MANUAL OVERRIDES, get rid of this to actually implement controls
 		//roll,pitch
 		g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
                 g.channel_pitch.radio_out               = APM_RC.InputCh(CH_PITCH);
