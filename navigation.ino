@@ -68,7 +68,7 @@ static void calc_airspeed_errors()
 
     // VSCL FBW_B airspeed target
     if (control_mode == FLY_BY_WIRE_B) {
-        target_airspeed_cm = VSCL_U1;//1100 cm/s??
+        target_airspeed_cm = VSCL_SPD;//1100 cm/s??
     }
 
     // Set target to current airspeed + ground speed undershoot,

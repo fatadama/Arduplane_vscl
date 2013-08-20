@@ -676,12 +676,10 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 //pinMode(camtrig, OUTPUT);			// these are free pins PE3(5), PH3(15), PH6(18), PB4(23), PB5(24), PL1(36), PL3(38), PA6(72), PA7(71), PK0(89), PK1(88), PK2(87), PK3(86), PK4(83), PK5(84), PK6(83), PK7(82)
 #endif
 
-//autoland VSCL defines
-const int16_t VSCL_U1 = 1264;//target forward speed in cm/s
-bool VSCL_FLARE = 0;//set to 1 if flare is turned on
-//runway direction is ETA_R - assume ETA_R == 135 deg
-#define COS_ETA_R -0.70711
-#define SIN_ETA_R 0.70711
+//VSCL globals: VSCL_PHI: commanded bank angle from the ground
+int16_t VSCL_PHI = 0;
+int16_t VSCL_SPD = 1100;//11 m/s by default
+int16_t VSCL_ALT = 6069;//60.69 m by default
 
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level logic
@@ -785,16 +783,6 @@ static void fast_loop()
     // custom code/exceptions for flight modes
     // ---------------------------------------
     update_current_flight_mode();
-	
-	//autoland - compute localizer and glideslope angles:
-	int32_t lat_rel = current_loc.lat - 3063823500;//deg*10^-8??
-	int32_t long_rel = current_loc.lng + 9648551900;
-	int32_t xp = 6378100*radians(lat_rel)*1e-6;//cm
-	int32_t yp = 6378100*radians(long_rel)*1e-6;//cm
-	int32_t x = xp*COS_ETA_R+yp*SIN_ETA_R;//cm
-	int32_t y = -xp*SIN_ETA_R+yp*COS_ETA_R;//cm
-	int32_t gamma = current_loc.alt/abs(x);//rad
-	int32_t lambda = -y/abs(x);//rad
 
     // apply desired roll, pitch and yaw to the plane
     // ----------------------------------------------
@@ -1150,8 +1138,13 @@ static void update_current_flight_mode(void)
         }
 
         case FLY_BY_WIRE_B:
-            //VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus an offset from the initialization point
-			altitude_error_cm = home.alt - adjusted_altitude_cm();
+            // command VSCL bank angle:
+			nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
+		
+			
+			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus an offset from the initialization point
+			//altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
+			altitude_error_cm = home.alt - adjusted_altitude_cm() + VSCL_ALT;
             calc_throttle();
             calc_nav_pitch();
             break;
