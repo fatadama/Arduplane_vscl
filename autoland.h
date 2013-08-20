@@ -5,6 +5,16 @@
 
 #include <AP_Common.h>
 
+//runway settings, as defines
+//localizer global latitude in degrees*10^7
+#define LOC_LAT 306382350
+//localizer global longitude in degrees*10^7
+#define LOC_LONG -964855190
+//ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
+#define COS_ETA_R_CONST 7871
+//SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
+#define SIN_ETA_R_CONST 7871
+
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
 function for updating stored values using the discrete-time transfer functions
@@ -15,20 +25,14 @@ void updateTransfer(int num, int den, float numtf[],float dentf[],float numval[]
 void updateTransfer(int num, int den, float numtf[],float dentf[],float numval[],float denval1[],float denval2[]);
 
 //update an array whose new value is either measured or computed elsewhere; i.e., array[1:end] = array[0:end-1], array[0]=newValue
-void updateCommanded(int len,float newVal,float array[])
-{
-	for(int i = len-1;i>0;i--)
-	{
-		array[i] = array[i-1];
-	}
-	array[0] = newVal;
-}
+void updateCommanded(int len,float newVal,float array[]);
+
 class VSCL_autoland{
 	public:
 	//constructor
 		VSCL_autoland();
 	//functions to compute output values
-		void elevator_update(float thetaNow);
+		void elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow);
 		//void throttle_update();
 		//void aileron_update();
 	//functions to access commanded settings
@@ -42,6 +46,7 @@ class VSCL_autoland{
 		int16_t aileron_out;
 		// functions to compute control deflections
 		void theta_cmd(float thetaRefNow, float thetaNow);
+		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow);
 };
 
 #endif

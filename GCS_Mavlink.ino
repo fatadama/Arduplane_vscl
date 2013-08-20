@@ -677,8 +677,8 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 	case MSG_VSCL_CONTROLS:
 	//sending a controls message
 	CHECK_PAYLOAD_SIZE(VSCL_CONTROLS);
-	//mavlink_msg_vscl_controls_send(chan,g.channel_pitch.radio_out,g.channel_throttle.radio_out,g.channel_roll.radio_out,g.channel_rudder.radio_out);
-	mavlink_msg_vscl_controls_send(chan,g.channel_pitch.servo_out,g.channel_throttle.servo_out,g.channel_roll.servo_out,g.channel_rudder.servo_out);
+	//mavlink_msg_vscl_controls_send(chan,g.channel_pitch.servo_out,g.channel_throttle.servo_out,g.channel_roll.servo_out,g.channel_rudder.servo_out);
+	mavlink_msg_vscl_controls_send(chan,autoland.elevator_get(),-1,-1,-1);
 	break;
 
     case MSG_RETRY_DEFERRED:

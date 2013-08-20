@@ -416,10 +416,10 @@ static void set_servos(void)
 		//throttle slew limit in FBWB mode:
 		throttle_slew_limit(last_throttle);
 		
-		//now I need to transmit these messages to the grnd
-		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
+		//now I need to transmit these data to the ground
+		//mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
                 if (gcs3.initialised) {
-                  mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
+                  //mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
                 }
 	//MANUAL OVERRIDES:
 		//roll,pitch

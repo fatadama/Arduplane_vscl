@@ -8,9 +8,19 @@ static void navigate()
     // do not navigate with corrupt data
     // ---------------------------------
     if (!have_position) {
-        return;
+        //return;
     }
-
+	
+	//VSCL - if we are in FLY_BY_WIRE_B mode, calculate the autoland commands
+	if (control_mode==FLY_BY_WIRE_B)
+	{
+		//calculate elevator output
+		autoland.elevator_update(current_loc.lat,current_loc.lng,current_loc.alt-home.alt,ahrs.pitch);
+		//send controls message with elevator data, time is logged automatically
+		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
+		return;
+	}
+	
     if(next_WP.lat == 0) {
         return;
     }

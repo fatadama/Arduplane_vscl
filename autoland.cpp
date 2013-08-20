@@ -110,12 +110,45 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 //update deltae_c (radians)
 	updateTransfer(4,4,Gl_num,Gl_den,deltae,theta_1,theta);
 //set the output value in centidegrees
-	elevator_out = int16_t(deltae[0]*1.745);
+	elevator_out = int16_t(deltae[0]*5730);
 }
 
-void VSCL_autoland::elevator_update(float thetaNow)
+void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow)
+{
+	//static arrays
+	static float Gl_num[] = {5.51,-6.5,1.00};
+	static float Gl_den[] = {1,-1,0};
+	static float gamma[] = {0,0,0};
+	static float gamma_ref[] = {0,0,0};
+	static float theta_ref[] = {0,0,0};
+	//update gamma_ref and gamma
+	updateCommanded(3,gammaRefNow,gamma_ref);
+	updateCommanded(3,gammaNow,gamma);
+	//update theta_ref:
+	updateTransfer(3,3,Gl_num,Gl_den,theta_ref,gamma_ref,gamma);
+	//call theta_cmd
+	theta_cmd(theta_ref[0],thetaNow);
+}
+
+/*
+elevator_update(float thetaNow)
+
+INPUTS:
+	thetaNow - current pitch angle in radians, pitch up is positive
+*/
+void VSCL_autoland::elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow)
 {
 //computes and sets elevator_out
-	//call glideslope tracker
-	theta_cmd(0.0,thetaNow);
+	//for now, compute gammaNow from GPS coords passed to this function
+		//later, group everything under a single update() function but use separate functions for debugging
+	//compute relative GPS coordinates
+	lat_e7 -= LOC_LAT;
+	lng_e7 -= LOC_LONG;
+	//compute relative X-Y coordinates
+	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
+	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
+	//compute current glideslope angle:
+	float gammaNow = (alt_cm)/abs(x_lcl);
+	//call glideslope tracker with a constant 5 deg glideslope
+	glideslope_cmd(.08727, gammaNow, thetaNow);
 }

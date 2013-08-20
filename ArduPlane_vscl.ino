@@ -76,6 +76,9 @@
 
 //VSCL include for autolanding
 #include "autoland.h"
+//create VSCL_autoland class object
+VSCL_autoland autoland;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Serial ports
