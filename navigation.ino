@@ -19,6 +19,15 @@ static void navigate()
 		autoland.elevator_update(current_loc.lat,current_loc.lng,current_loc.alt-home.alt,ahrs.pitch);
 		//calculate aileron output
 		autoland.aileron_update(current_loc.lat,current_loc.lng,ahrs.yaw,ahrs.roll);
+		//get the airspeed - write in a check in case airspeed is not enabled
+		float aspeed;
+		if (airspeed.enabled()) {
+			aspeed = airspeed.get_airspeed();
+		} else if (!ahrs.airspeed_estimate(&aspeed)) {
+			aspeed = 0;
+		}
+		//calculate throttle output
+		autoland.throttle_update(aspeed,current_loc.alt-home.alt);
 		//send controls message with elevator data, time is logged automatically
 		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
 		return;

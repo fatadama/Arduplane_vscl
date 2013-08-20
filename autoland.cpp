@@ -11,6 +11,8 @@ static const int32_t LOC_LONG = -964855190;
 static const int16_t COS_ETA_R_CONST = 7871;
 //SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
 static const int16_t SIN_ETA_R_CONST = 7871;
+//flare altitude (cm):
+static const uint8_t h_flare = 400;
 
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
@@ -82,6 +84,11 @@ VSCL_autoland::VSCL_autoland()
 	elevator_out = 0;
 	aileron_out = 0;
 	throttle_out = 0;
+	status_vector = new int16_t[6];
+	for (int ii = 0;ii<6;ii++)
+	{
+		status_vector[ii] = 0;
+	}
 	return;
 }
 
@@ -124,6 +131,9 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	updateTransfer(4,4,Gl_num,Gl_den,deltae,theta_1,theta);
 //set the output value in centidegrees
 	elevator_out = int16_t(deltae[0]*5730);
+//store theta_ref and elevator command:
+	status_vector[1] = int16_t(thetaRefNow*5730);
+	status_vector[3] = elevator_out;
 }
 
 void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow)
@@ -156,19 +166,37 @@ INPUTS:
 */
 void VSCL_autoland::elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow)
 {
+	static int16_t alt_last_cm = 0;//static variable that stores the previous altitude
 //computes and sets elevator_out
 	//for now, compute gammaNow from GPS coords passed to this function
 		//later, group everything under a single update() function but use separate functions for debugging
-	//compute relative GPS coordinates
-	lat_e7 -= LOC_LAT;
-	lng_e7 -= LOC_LONG;
-	//compute relative X-Y coordinates
-	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
-	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
-	//compute current glideslope angle:
-	float gammaNow = (alt_cm)/abs(x_lcl);
-	//call glideslope tracker with a constant 5 deg glideslope
-	glideslope_cmd(.08727, gammaNow, thetaNow);
+	if (alt_cm>h_flare)
+	{
+//glideslope tracking branch
+		//compute relative GPS coordinates
+		lat_e7 -= LOC_LAT;
+		lng_e7 -= LOC_LONG;
+		//compute relative X-Y coordinates
+		int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
+		int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
+		//compute current glideslope angle:
+		float gammaNow = (alt_cm)/abs(x_lcl);
+		//call glideslope tracker with a constant 5 deg glideslope
+		glideslope_cmd(.08727, 
+			gammaNow,
+			thetaNow-theta1);
+	}
+	else
+	{
+//autoflare branch
+		flare_cmd(.01*alt_cm,
+			.01*float(alt_cm-alt_last_cm)/(.001*(millis()-last_update)),
+			thetaNow-theta1);
+	}
+//store the altitude to estimate descent rate
+	alt_last_cm = alt_cm;
+//store the current time to estimate the time in between updates
+	last_update = millis();
 }
 
 //set the aileron to meet the commanded bank angle
@@ -194,6 +222,9 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
 //set target aileron
 	aileron_out = int16_t(deltaa_c[0]*5730);
+//store values in status vector
+	status_vector[2] = int16_t(phiRefNow*5730);
+	status_vector[5] = aileron_out;
 }
 
 void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range)
@@ -227,6 +258,8 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 	}
 //call aileron control function
 	phi_cmd(phi_ref,phiNow);
+//store reference heading in status vector
+	status_vector[0] = int16_t(5730*psiRefNow);
 }
 
 void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range)
@@ -257,4 +290,68 @@ void VSCL_autoland::aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, 
 	float lambdaNow = -y_lcl/abs(x_lcl);//radians
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
+}
+
+void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
+{
+//constant arrays
+	static float Gf_num1[] = {2.60050000000000,	-5.10000000000000,	2.50000000000000},
+		Gf_den1[] = {1,-1,0},
+		Ff_num1[] = {1,	-2.44263292099462,	2.27575100243921,	-0.989813891276108,	0.182469577565696},
+		Ff_den1[] = {4.71878410637755,	-8.93150040050544,	4.23849006186207},
+		TAU_INV = -0.4;
+//static arrays
+	static float theta_ref[] = {0,0,0},
+		hdot_ref[] = {0,0,0,0,0},
+		hdot_1[] = {0,0,0},
+		hdot[] = {0,0,0};
+//store reference vertical speed
+	updateCommanded(5,hNow*TAU_INV,hdot_ref);
+//store vertical speed
+	updateCommanded(3,hdotNow,hdot);
+//prefilter
+	updateTransfer(5,3,Ff_num1,Ff_den1,hdot_1,hdot_ref);
+//commanded pitch angle:
+	updateTransfer(3,3,Gf_num1,Gf_den1,theta_ref,hdot_1,hdot);
+//call elevator command function
+	theta_cmd(theta_ref[0],thetaNow);
+}
+
+//update commanded throttle
+void VSCL_autoland::airspeed_cmd(float uRefNow,float uNow)
+{
+	//static arrays
+	static float Gu_num[] = {1,-1.71427727671312,0.736718178229491},
+		Gu_den[] = {1.37968043263210,	-1.66949265764827,	0.290100334205593},
+		Fu_num[] = {1,-1.83621739707991,	0.848629607268316},
+		Fu_den[] = {9.94945495916093,	-19.3957837362669,	9.45874098729436};
+	static float u[] = {0,0,0},
+		uRef[] = {0,0,0},
+		u1[] = {0,0,0},
+		deltat_c[] = {0,0,0};
+	//update u_ref and u
+	updateCommanded(3,uNow,u);
+	updateCommanded(3,uRefNow,uRef);
+	//update u_1:
+	updateTransfer(3,3,Fu_num,Fu_den,u1,uRef);
+	//update deltat_c:
+	updateTransfer(3,3,Gu_num,Gu_den,deltat_c,u1,u);
+//set throttle command
+	throttle_out = int16_t(100*deltat_c[0]-DELTAT1);
+//make sure throttle is in [0,100]
+	throttle_out = constrain(throttle_out,0,100);
+//store setting in the status vector
+	status_vector[4] = throttle_out;
+}
+
+void VSCL_autoland::throttle_update(float uNow,int16_t alt_cm)
+{
+	if (alt_cm>h_flare)
+	{
+		airspeed_cmd(0.0,uNow-U1);
+	}
+	else
+	{
+		airspeed_cmd(-2.0,uNow-U1);
+	}
 }

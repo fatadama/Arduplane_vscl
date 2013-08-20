@@ -7,6 +7,14 @@
 
 //runway settings are in autoland.cpp
 
+//steady-state values of aircraft states:
+//pitch angle
+#define theta1 -.0197
+//forward speed
+#define U1 12.6431
+//throttle steady-state (.6329)
+#define DELTAT1 63
+
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
 function for updating stored values using the discrete-time transfer functions
@@ -25,13 +33,17 @@ class VSCL_autoland{
 		VSCL_autoland();
 	//functions to compute output values
 		void elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow);
-		//void throttle_update();
+		void throttle_update(float uNow,int16_t alt_cm);
 		void aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, float phiNow);
 	//functions to access commanded settings
 		int16_t elevator_get();
 		int16_t throttle_get();
 		int16_t aileron_get();
 	private:
+		//last time the update() function(s) got called - used to estimate desccent rate to account for inaccuracy in update time
+		int32_t last_update;
+		//store the reference values and current controls in a vector. This is slightly redundant given that controls are already stored
+		int16_t* status_vector; // stores psi_ref,theta_ref,phi_ref,delta_e,delta_t, delta_a in centidegrees
 		//current PWM commanded settings of each channel
 		int16_t elevator_out;
 		int16_t throttle_out;//throttle output is in percentage?
@@ -42,6 +54,8 @@ class VSCL_autoland{
 		void phi_cmd(float phiRefNow, float phiNow);
 		void psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range);
 		void localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range);
+		void flare_cmd(float hNow, float hdotNow, float thetaNow);
+		void airspeed_cmd(float uRefNow,float uNow);
 };
 
 #endif
