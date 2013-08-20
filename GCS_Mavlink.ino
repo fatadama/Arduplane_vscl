@@ -677,7 +677,8 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 	case MSG_VSCL_CONTROLS:
 	//sending a controls message
 	CHECK_PAYLOAD_SIZE(VSCL_CONTROLS);
-	mavlink_msg_vscl_controls_send(chan,g.channel_pitch.radio_out,g.channel_throttle.radio_out,g.channel_roll.radio_out,g.channel_rudder.radio_out);
+	//uses servo_out instead of radio_out: should give angles in centidegrees and throttle as a percentage? [0..100]
+	mavlink_msg_vscl_controls_send(chan,g.channel_pitch.servo_out,g.channel_throttle.servo_out,g.channel_roll.servo_out,g.channel_rudder.servo_out);
 	break;
 
     case MSG_RETRY_DEFERRED:
