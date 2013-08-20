@@ -8,14 +8,17 @@ static void navigate()
     // do not navigate with corrupt data
     // ---------------------------------
     if (!have_position) {
-        //return;
+        return;
     }
 	
 	//VSCL - if we are in FLY_BY_WIRE_B mode, calculate the autoland commands
+		//add some state limits to prevent this mode from being accidentally triggered
 	if (control_mode==FLY_BY_WIRE_B)
 	{
-		//calculate elevator output
+		//calculate elevator output - verify this alt-home.alt, may be important!!!!
 		autoland.elevator_update(current_loc.lat,current_loc.lng,current_loc.alt-home.alt,ahrs.pitch);
+		//calculate aileron output
+		autoland.aileron_update(current_loc.lat,current_loc.lng,ahrs.yaw,ahrs.roll);
 		//send controls message with elevator data, time is logged automatically
 		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
 		return;

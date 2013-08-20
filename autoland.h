@@ -5,15 +5,7 @@
 
 #include <AP_Common.h>
 
-//runway settings, as defines
-//localizer global latitude in degrees*10^7
-#define LOC_LAT 306382350
-//localizer global longitude in degrees*10^7
-#define LOC_LONG -964855190
-//ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-#define COS_ETA_R_CONST 7871
-//SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-#define SIN_ETA_R_CONST 7871
+//runway settings are in autoland.cpp
 
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
@@ -34,7 +26,7 @@ class VSCL_autoland{
 	//functions to compute output values
 		void elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow);
 		//void throttle_update();
-		//void aileron_update();
+		void aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, float phiNow);
 	//functions to access commanded settings
 		int16_t elevator_get();
 		int16_t throttle_get();
@@ -47,6 +39,9 @@ class VSCL_autoland{
 		// functions to compute control deflections
 		void theta_cmd(float thetaRefNow, float thetaNow);
 		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow);
+		void phi_cmd(float phiRefNow, float phiNow);
+		void psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range);
+		void localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range);
 };
 
 #endif
