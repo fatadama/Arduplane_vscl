@@ -84,11 +84,9 @@ VSCL_autoland::VSCL_autoland()
 	elevator_out = 0;
 	aileron_out = 0;
 	throttle_out = 0;
-	status_vector = new int16_t[6];
-	for (int ii = 0;ii<6;ii++)
-	{
-		status_vector[ii] = 0;
-	}
+	ref_yaw = -3159;//=-181 degrees, intended to signal the variable has not been initialized
+	ref_pitch = -3159;
+	ref_roll = -3159;
 	return;
 }
 
@@ -132,8 +130,7 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 //set the output value in centidegrees
 	elevator_out = int16_t(deltae[0]*5730);
 //store theta_ref and elevator command:
-	status_vector[1] = int16_t(thetaRefNow*5730);
-	status_vector[3] = elevator_out;
+	ref_pitch = int16_t(thetaRefNow*10000);//10^-4 radians
 }
 
 void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow)
@@ -223,8 +220,7 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 //set target aileron
 	aileron_out = int16_t(deltaa_c[0]*5730);
 //store values in status vector
-	status_vector[2] = int16_t(phiRefNow*5730);
-	status_vector[5] = aileron_out;
+	ref_roll = int16_t(phiRefNow*10000);
 }
 
 void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range)
@@ -259,7 +255,7 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 //call aileron control function
 	phi_cmd(phi_ref,phiNow);
 //store reference heading in status vector
-	status_vector[0] = int16_t(5730*psiRefNow);
+	ref_yaw = int16_t(10000*psiRefNow);
 }
 
 void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range)
@@ -340,8 +336,6 @@ void VSCL_autoland::airspeed_cmd(float uRefNow,float uNow)
 	throttle_out = int16_t(100*deltat_c[0]-DELTAT1);
 //make sure throttle is in [0,100]
 	throttle_out = constrain(throttle_out,0,100);
-//store setting in the status vector
-	status_vector[4] = throttle_out;
 }
 
 void VSCL_autoland::throttle_update(float uNow,int16_t alt_cm)
@@ -354,4 +348,19 @@ void VSCL_autoland::throttle_update(float uNow,int16_t alt_cm)
 	{
 		airspeed_cmd(-2.0,uNow-U1);
 	}
+}
+
+int16_t VSCL_autoland::psi_get()
+{
+	return ref_yaw;
+}
+
+int16_t VSCL_autoland::theta_get()
+{
+	return ref_pitch;
+}
+
+int16_t VSCL_autoland::phi_get()
+{
+	return ref_roll;
 }

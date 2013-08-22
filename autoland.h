@@ -39,15 +39,20 @@ class VSCL_autoland{
 		int16_t elevator_get();
 		int16_t throttle_get();
 		int16_t aileron_get();
+		int16_t psi_get();//returns heading reference in 10^-4 radians
+		int16_t theta_get();//returns pitch reference in 10^-4 radians
+		int16_t phi_get();//returns roll reference in 10^-4 radians
 	private:
 		//last time the update() function(s) got called - used to estimate desccent rate to account for inaccuracy in update time
 		int32_t last_update;
-		//store the reference values and current controls in a vector. This is slightly redundant given that controls are already stored
-		int16_t* status_vector; // stores psi_ref,theta_ref,phi_ref,delta_e,delta_t, delta_a in centidegrees
-		//current PWM commanded settings of each channel
+		//current commanded angle of each channel
 		int16_t elevator_out;
 		int16_t throttle_out;//throttle output is in percentage?
 		int16_t aileron_out;
+		//current commanded angles of each axis in 10^-4 radians
+		int16_t ref_yaw;
+		int16_t ref_pitch;
+		int16_t ref_roll;
 		// functions to compute control deflections
 		void theta_cmd(float thetaRefNow, float thetaNow);
 		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow);

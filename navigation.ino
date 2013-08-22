@@ -28,8 +28,11 @@ static void navigate()
 		}
 		//calculate throttle output
 		autoland.throttle_update(aspeed,current_loc.alt-home.alt);
-		//send controls message with elevator data, time is logged automatically
-		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
+		//send autoland status to ground for logging:
+		mavlink_send_message(MAVLINK_COMM_0,MSG_VSCL_AUTOLAND,0);
+		if (gcs3.initialised) {
+			mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_AUTOLAND, 0);
+		}
 		return;
 	}
 	
