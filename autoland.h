@@ -36,7 +36,7 @@ class VSCL_autoland{
 		void throttle_update(float uNow,int16_t alt_cm);
 		void aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, float phiNow);
 	//functions to access commanded settings
-		int16_t elevator_get();
+		int16_t elevator_get();//returns values in centidegrees
 		int16_t throttle_get();
 		int16_t aileron_get();
 		int16_t psi_get();//returns heading reference in 10^-4 radians

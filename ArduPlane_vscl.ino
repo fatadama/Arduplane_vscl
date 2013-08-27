@@ -76,8 +76,13 @@
 
 //VSCL include for autolanding
 #include "autoland.h"
+#include "urf.h"
 //create VSCL_autoland class object
 VSCL_autoland autoland;
+//create ultrasonic rangefinder object
+URF urf;
+bool flag_urf = 0, flag_flare = 0;//flag that controls if the ultrasonic rangefinder readings are used
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -871,6 +876,14 @@ static void medium_loop()
 
         // Read altitude from sensors
         // ------------------
+		//VSCL update ultrasonic rangefinder
+		if (URF_USE){
+			urf.read_alt();//update URF reading
+			//logic to enable use of URF readings:
+			if (!flag_urf && urf.get_alt_cm()<=600){
+				flag_urf = 1;
+			}
+		}
         update_alt();
 
         // altitude smoothing
@@ -1229,8 +1242,32 @@ static void update_alt()
     //altitude_sensor = BARO;
 
     if (barometer.healthy) {
+		if ( (!flag_urf) || (!URF_USE) )//use barometer/GPS mix (APM default)
+		{
         current_loc.alt = (1 - g.altitude_mix) * g_gps->altitude;                       // alt_MSL centimeters (meters * 100)
         current_loc.alt += g.altitude_mix * (read_barometer() + home.alt);
+		}
+		else
+		{
+			if(!flag_flare)
+			{//use mix of barometer and URF altitudes
+				// we are above the flare height but within the sensitivity region of the URF and want to avoid discontinuity when 
+				//		switching from (theoretically) less accurate barometer reading to more accurate URF readings
+				current_loc.alt = read_barometer() + home_alt;
+				current_loc.alt = (-.005)*(current_loc.alt - urf.get_alt_cm())*(current_loc.alt-600) + urf.get_alt_cm();
+				
+				//turn on the flare mode if we are below 400 cm
+				if (current_loc.alt<=400)
+				{
+					flag_flare = 1;
+					//once we have enabled the flare, we are not going back - be sure to comment out this logic if we are not using the flare
+				}
+			}
+			else
+			{//use URF range - URF is updated in the medium loop already
+				current_loc.alt = urf.get_alt_cm();
+			}
+		}
     } else if (g_gps->fix) {
         current_loc.alt = g_gps->altitude;     // alt_MSL centimeters (meters * 100)
     }

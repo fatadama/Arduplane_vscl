@@ -6,6 +6,8 @@
 
 #define CONFIG_APM_HARDWARE APM_HARDWARE_APM2
 
+#define URF_USE ENABLED
+
 // Ordinary users should please ignore the following define.
 // APM2_BETA_HARDWARE is used to support early (September-October 2011) APM2
 // hardware which had the BMP085 barometer onboard. Only a handful of
