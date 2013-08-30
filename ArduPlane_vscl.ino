@@ -1245,7 +1245,7 @@ static void update_alt()
 		if ( (!flag_urf) || (!URF_USE) )//use barometer/GPS mix (APM default)
 		{
         current_loc.alt = (1 - g.altitude_mix) * g_gps->altitude;                       // alt_MSL centimeters (meters * 100)
-        current_loc.alt += g.altitude_mix * (read_barometer() + home.alt);
+        current_loc.alt += g.altitude_mix * (read_barometer() + home.alt);//this is ABSOLUTE ALTITUDE
 		}
 		else
 		{
@@ -1253,11 +1253,12 @@ static void update_alt()
 			{//use mix of barometer and URF altitudes
 				// we are above the flare height but within the sensitivity region of the URF and want to avoid discontinuity when 
 				//		switching from (theoretically) less accurate barometer reading to more accurate URF readings
-				current_loc.alt = read_barometer() + home_alt;
+				current_loc.alt = read_barometer();
 				current_loc.alt = (-.005)*(current_loc.alt - urf.get_alt_cm())*(current_loc.alt-600) + urf.get_alt_cm();
+				current_loc.alt += home.alt;//get MSL altitude
 				
 				//turn on the flare mode if we are below 400 cm
-				if (current_loc.alt<=400)
+				if (current_loc.alt<=400 && control_mode == FLY_BY_WIRE_B)//check control mode so we don't switch to URF in takeoff
 				{
 					flag_flare = 1;
 					//once we have enabled the flare, we are not going back - be sure to comment out this logic if we are not using the flare
@@ -1265,7 +1266,7 @@ static void update_alt()
 			}
 			else
 			{//use URF range - URF is updated in the medium loop already
-				current_loc.alt = urf.get_alt_cm();
+				current_loc.alt = urf.get_alt_cm() + home.alt;
 			}
 		}
     } else if (g_gps->fix) {
