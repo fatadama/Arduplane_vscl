@@ -4,13 +4,13 @@
 
 //runway settings, as defines
 //localizer global latitude in degrees*10^7
-static const int32_t LOC_LAT = 306382350;
+static const int32_t LOC_LAT = 306378999;
 //localizer global longitude in degrees*10^7
-static const int32_t LOC_LONG = -964855190;
+static const int32_t LOC_LONG = -964850333;
 //ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-static const int16_t COS_ETA_R_CONST = 7871;
+static const int16_t COS_ETA_R_CONST = -11132;
 //SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-static const int16_t SIN_ETA_R_CONST = 7871;
+static const int16_t SIN_ETA_R_CONST = 0;
 //flare altitude (cm):
 static const uint8_t h_flare = 400;
 
