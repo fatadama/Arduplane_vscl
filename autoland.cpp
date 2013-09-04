@@ -87,6 +87,7 @@ VSCL_autoland::VSCL_autoland()
 	ref_yaw = -3159;//=-181 degrees, intended to signal the variable has not been initialized
 	ref_pitch = -3159;
 	ref_roll = -3159;
+	_reset = 0;
 	return;
 }
 
@@ -120,6 +121,20 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	static float theta_1[] = {0,0,0,0};
 	static float theta[] = {0,0,0,0};
 	static float deltae[] = {0,0,0,0};
+	
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<4;ii++)
+		{
+			theta_ref[ii] = 0;
+			theta_1[ii] = 0;
+			theta[ii] = 0;
+			deltae[ii] = 0;
+		}
+		return;
+	}
+	
 //update theta and thetaRef
 	updateCommanded(4,thetaRefNow,theta_ref);
 	updateCommanded(4,thetaNow,theta);
@@ -129,6 +144,8 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	updateTransfer(4,4,Gl_num,Gl_den,deltae,theta_1,theta);
 //set the output value in centidegrees
 	elevator_out = int16_t(deltae[0]*5730);
+	//constrain elevator out
+	elevator_out = constrain(elevator_out,-4500,4500);
 //store theta_ref and elevator command:
 	ref_pitch = int16_t(thetaRefNow*10000);//10^-4 radians
 }
@@ -141,6 +158,17 @@ void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thet
 	static float gamma[] = {0,0,0};
 	static float gamma_ref[] = {0,0,0};
 	static float theta_ref[] = {0,0,0};
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<3;ii++)
+		{
+			gamma[ii] = 0;
+			gamma_ref[ii] = 0;
+			theta_ref[ii] = 0;
+		}
+		return;
+	}
 //update gamma_ref and gamma
 	updateCommanded(3,gammaRefNow,gamma_ref);
 	updateCommanded(3,gammaNow,gamma);
@@ -164,6 +192,12 @@ INPUTS:
 void VSCL_autoland::elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow)
 {
 	static int16_t alt_last_cm = 0;//static variable that stores the previous altitude
+//handle reset
+	if (_reset)
+	{
+		alt_last_cm = 0;
+		return;
+	}
 //computes and sets elevator_out
 	//for now, compute gammaNow from GPS coords passed to this function
 		//later, group everything under a single update() function but use separate functions for debugging
@@ -208,6 +242,20 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	static float phi_1[] = {0,0,0,0,0};
 	static float phi[] = {0,0,0,0,0};
 	static float deltaa_c[] = {0,0,0,0,0};
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<5;ii++)
+		{
+			phi_1[ii] = 0;
+			phi[ii] = 0;
+			deltaa_c[ii] = 0;
+		}
+		phi_ref[0] = 0;
+		phi_ref[1] = 0;
+		phi_ref[2] = 0;
+		return;
+	}
 //update commanded values
 	updateCommanded(5,phiNow,phi);
 	updateCommanded(3,phiRefNow,phi_ref);
@@ -219,6 +267,8 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
 //set target aileron
 	aileron_out = int16_t(deltaa_c[0]*5730);
+	//constrain elevator out
+	aileron_out = constrain(aileron_out,-4500,4500);
 //store values in status vector
 	ref_roll = int16_t(phiRefNow*10000);
 }
@@ -232,6 +282,18 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 	static float psi_1[] = {0,0,0,0};
 	static float psi = 0;
 	static float phi_ref = 0;
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<4;ii++)
+		{
+			psi_ref[ii] = 0;
+			psi_1[ii] = 0;
+		}
+		psi = 0;
+		phi_ref = 0;
+		return;
+	}
 //update values:
 	psi = psiNow;
 //avoid singularity at X = 0 (local NED coordinate)
@@ -265,6 +327,15 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 	static float G_den0[] = {0.522600000000000,-0.997400000000000,	0.476600000000000};
 	static float lambda[] = {0,0,0};
 	static float psi_ref[] = {0,0,0};
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<3;ii++)
+		{
+			lambda[ii] = 0;
+			psi_ref[ii] = 0;
+		}
+	}
 //store current value of lambda
 	updateCommanded(3,lambdaNow,lambda);
 //update psi_ref:
@@ -301,6 +372,20 @@ void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
 		hdot_ref[] = {0,0,0,0,0},
 		hdot_1[] = {0,0,0},
 		hdot[] = {0,0,0};
+	//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<3;ii++)
+		{
+			theta_ref[ii] = 0;
+			hdot_1[ii] = 0;
+			hdot[ii] = 0;
+			hdot_ref[ii] = 0;
+		}
+		hdot_ref[3] = 0;
+		hdot_ref[4] = 0;
+		return;
+	}
 //store reference vertical speed
 	updateCommanded(5,hNow*TAU_INV,hdot_ref);
 //store vertical speed
@@ -325,6 +410,18 @@ void VSCL_autoland::airspeed_cmd(float uRefNow,float uNow)
 		uRef[] = {0,0,0},
 		u1[] = {0,0,0},
 		deltat_c[] = {0,0,0};
+//handle reset
+	if (_reset)
+	{
+		for(int ii = 0;ii<3;ii++)
+		{
+			u[ii] = 0;
+			uRef[ii] = 0;
+			u1[ii] = 0;
+			deltat_c[ii] = 0;
+		}
+		return;
+	}
 	//update u_ref and u
 	updateCommanded(3,uNow,u);
 	updateCommanded(3,uRefNow,uRef);
@@ -363,4 +460,20 @@ int16_t VSCL_autoland::theta_get()
 int16_t VSCL_autoland::phi_get()
 {
 	return ref_roll;
+}
+
+void VSCL_autoland::reset()
+{
+	_reset = 1;
+	//call functions
+	theta_cmd(0,0);
+	glideslope_cmd(0,0,0);
+	elevator_update(0,0,0,0);
+	phi_cmd(0,0);
+	psi_cmd(0,0,0,0);
+	localizer_cmd(0,0,0,0);
+	flare_cmd(0,0,0);
+	airspeed_cmd(0,0);
+	//return to normal operation
+	_reset = 0;
 }

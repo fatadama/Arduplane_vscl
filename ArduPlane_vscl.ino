@@ -82,6 +82,7 @@ VSCL_autoland autoland;
 //create ultrasonic rangefinder object
 URF urf;
 bool flag_urf = 0, flag_flare = 0;//flag that controls if the ultrasonic rangefinder readings are used
+enum FlightMode last_control_mode  = INITIALISING;
 
 
 
@@ -1158,14 +1159,11 @@ static void update_current_flight_mode(void)
 
         case FLY_BY_WIRE_B:
             // command VSCL bank angle:
-			nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
-		
-			
+			//nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
 			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus an offset from the initialization point
 			//altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
-			altitude_error_cm = home.alt - adjusted_altitude_cm() + VSCL_ALT;
-            calc_throttle();
-            calc_nav_pitch();
+			//calc_throttle();
+            //calc_nav_pitch();
             break;
 
         case STABILIZE:
@@ -1242,14 +1240,16 @@ static void update_alt()
     //altitude_sensor = BARO;
 
     if (barometer.healthy) {
-		if ( (!flag_urf) || (!URF_USE) )//use barometer/GPS mix (APM default)
+		//if ( (!flag_urf) || (!URF_USE) )//use barometer/GPS mix (APM default)
+		if ( (current_loc.alt>=600) || (!URF_USE) )//use barometer/GPS mix (APM default) - added this for multiple passes testing
 		{
         current_loc.alt = (1 - g.altitude_mix) * g_gps->altitude;                       // alt_MSL centimeters (meters * 100)
         current_loc.alt += g.altitude_mix * (read_barometer() + home.alt);//this is ABSOLUTE ALTITUDE
 		}
 		else
 		{
-			if(!flag_flare)
+			//if(!flag_flare)
+			if(current_loc.alt<600 && current_loc.alt>400)
 			{//use mix of barometer and URF altitudes
 				// we are above the flare height but within the sensitivity region of the URF and want to avoid discontinuity when 
 				//		switching from (theoretically) less accurate barometer reading to more accurate URF readings

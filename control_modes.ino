@@ -19,8 +19,7 @@ static void read_control_switch()
     if (oldSwitchPosition != switchPosition ||
         (g.reset_switch_chan != 0 &&
          APM_RC.InputCh(g.reset_switch_chan-1) > RESET_SWITCH_CHAN_PWM)) {
-
-        if (switch_debouncer == false) {
+		 if (switch_debouncer == false) {
             // this ensures that mode switches only happen if the
             // switch changes for 2 reads. This prevents momentary
             // spikes in the mode control channel from causing a mode
@@ -28,8 +27,17 @@ static void read_control_switch()
             switch_debouncer = true;
             return;
         }
-
+		//save the last control mode
+		last_control_mode = control_mode;
+		
         set_mode((enum FlightMode)(flight_modes[switchPosition].get()));
+		
+		//VSCL logic to reset the autolanding controller
+		if(last_control_mode == FLY_BY_WIRE_B && control_mode == MANUAL)
+		{
+			autoland.reset();
+			gcs_send_text_P(SEVERITY_LOW,PSTR("Reset autolanding controller."));
+		}
 
         oldSwitchPosition = switchPosition;
         prev_WP = current_loc;

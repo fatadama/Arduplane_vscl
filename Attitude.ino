@@ -61,6 +61,23 @@ static bool stick_mixing_enabled(void)
 
 static void stabilize()
 {
+	if (control_mode == FLY_BY_WIRE_B)
+	{
+		if (!have_position)
+		{
+			//GOTO manual control
+			control_mode = MANUAL;
+			gcs_send_text_P(SEVERITY_LOW,PSTR("Bad GPS - GOTO MANUAL!"));
+		}
+		else
+		{
+		//apply the autoland values
+			g.channel_pitch.servo_out = autoland.elevator_get();
+			g.channel_roll.servo_out = autoland.aileron_get();
+			g.channel_throttle.servo_out = 0*autoland.throttle_get();
+		}
+		return;
+	}
     float ch1_inf = 1.0;
     float ch2_inf = 1.0;
     float ch4_inf = 1.0;
@@ -103,7 +120,7 @@ static void stabilize()
     // -----------------------------------------------------------
     if (stick_mixing_enabled()) {
 	//VSCL modified the below to remove "!= FLY_BY_WIRE_B" to feedthrough pilot commands in FBWB:
-        if (control_mode != FLY_BY_WIRE_A) {
+        if (control_mode != FLY_BY_WIRE_A && control_mode != FLY_BY_WIRE_B) {
             // do stick mixing on aileron/elevator if not in a fly by
             // wire mode
             ch1_inf = (float)g.channel_roll.radio_in - (float)g.channel_roll.radio_trim;
@@ -402,7 +419,7 @@ static void set_servos(void)
                 }
 		if (g.mix_mode == 0) {
                     g.channel_roll.calc_pwm();
-                    g.channel_pitch.calc_pwm();
+                    g.channel_pitch.calc_pwm();//calculates radio_out from servo_out??
                 }
 		g.channel_rudder.calc_pwm();
 
@@ -413,14 +430,15 @@ static void set_servos(void)
                 g.channel_throttle.servo_out = constrain(g.channel_throttle.servo_out,g.throttle_min.get(),g.throttle_max.get());
 		g.channel_throttle.calc_pwm();
 #endif
-		//throttle slew limit in FBWB mode:
-		throttle_slew_limit(last_throttle);
+		//throttle slew limit in FBWB mode:?
+		//throttle_slew_limit(last_throttle);
 		
 		//now I need to transmit these data to the ground
 		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);
                 if (gcs3.initialised) {
                   mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
                 }
+				/*
 	//MANUAL OVERRIDES:
 		//roll,pitch
 		g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
@@ -432,7 +450,7 @@ static void set_servos(void)
                 RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
 		//now pass through values directly as in MANUAL mode
 		g.channel_throttle.radio_out    = g.channel_throttle.radio_in;
-                g.channel_rudder.radio_out = g.channel_rudder.radio_in;
+                g.channel_rudder.radio_out = g.channel_rudder.radio_in;*/
 	}
     else {
         if (g.mix_mode == 0) {

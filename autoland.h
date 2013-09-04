@@ -42,8 +42,9 @@ class VSCL_autoland{
 		int16_t psi_get();//returns heading reference in 10^-4 radians
 		int16_t theta_get();//returns pitch reference in 10^-4 radians
 		int16_t phi_get();//returns roll reference in 10^-4 radians
+		void reset();//function to reset the static arrays in the control computation functions
 	private:
-		//last time the update() function(s) got called - used to estimate desccent rate to account for inaccuracy in update time
+		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
 		int32_t last_update;
 		//current commanded angle of each channel
 		int16_t elevator_out;
@@ -61,6 +62,8 @@ class VSCL_autoland{
 		void localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range);
 		void flare_cmd(float hNow, float hdotNow, float thetaNow);
 		void airspeed_cmd(float uRefNow,float uNow);
+		//flag to reset functions - for flight testing purposes only
+		bool _reset;
 };
 
 #endif
