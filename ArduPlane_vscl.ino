@@ -688,11 +688,6 @@ AP_Mount camera_mount2(&current_loc, g_gps, &ahrs, 1);
 //pinMode(camtrig, OUTPUT);			// these are free pins PE3(5), PH3(15), PH6(18), PB4(23), PB5(24), PL1(36), PL3(38), PA6(72), PA7(71), PK0(89), PK1(88), PK2(87), PK3(86), PK4(83), PK5(84), PK6(83), PK7(82)
 #endif
 
-//VSCL globals: VSCL_PHI: commanded bank angle from the ground
-int16_t VSCL_PHI = 0;
-int16_t VSCL_SPD = 1100;//11 m/s by default
-int16_t VSCL_ALT = 6069;//60.69 m by default
-
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level logic
 ////////////////////////////////////////////////////////////////////////////////
@@ -1158,12 +1153,7 @@ static void update_current_flight_mode(void)
         }
 
         case FLY_BY_WIRE_B:
-            // command VSCL bank angle:
-			//nav_roll_cd = VSCL_PHI*100;//go to the specified VSCL bank angle, in centidegrees
-			//VSCL - I believe the following line will try to drive the altitude to the "home" altitude plus an offset from the initialization point
-			//altitude_error_cm = home.alt - adjusted_altitude_cm() + g.FBWB_min_altitude_cm;
-			//calc_throttle();
-            //calc_nav_pitch();
+            //do nothing here; calculations are in navigate()
             break;
 
         case STABILIZE:

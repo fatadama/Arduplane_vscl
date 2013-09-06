@@ -15,10 +15,6 @@ static void navigate()
 		//add some state limits to prevent this mode from being accidentally triggered
 	if (control_mode==FLY_BY_WIRE_B)
 	{
-		//calculate elevator output - verify this alt-home.alt, may be important!!!!
-		autoland.elevator_update(current_loc.lat,current_loc.lng,current_loc.alt-home.alt,ahrs.pitch);
-		//calculate aileron output
-		autoland.aileron_update(current_loc.lat,current_loc.lng,ahrs.yaw,ahrs.roll);
 		//get the airspeed - write in a check in case airspeed is not enabled
 		float aspeed;
 		if (airspeed.enabled()) {
@@ -26,8 +22,8 @@ static void navigate()
 		} else if (!ahrs.airspeed_estimate(&aspeed)) {
 			aspeed = 0;
 		}
-		//calculate throttle output
-		autoland.throttle_update(aspeed,current_loc.alt-home.alt);
+		//update the autoland commands; verify this alt-home.alt, may be important!!!!
+		autoland.update(current_loc.lat, current_loc.lng, current_loc.alt-home.alt,aspeed, ahrs.pitch, ahrs.yaw,ahrs.roll);
 		//send autoland status to ground for logging:
 		mavlink_send_message(MAVLINK_COMM_0,MSG_VSCL_AUTOLAND,0);
 		if (gcs3.initialised) {

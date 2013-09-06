@@ -32,9 +32,7 @@ class VSCL_autoland{
 	//constructor
 		VSCL_autoland();
 	//functions to compute output values
-		void elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow);
-		void throttle_update(float uNow,int16_t alt_cm);
-		void aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, float phiNow);
+		void update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float uNow, float thetaNow, float psiNow,float phiNow);
 	//functions to access commanded settings
 		int16_t elevator_get();//returns values in centidegrees
 		int16_t throttle_get();
@@ -54,6 +52,10 @@ class VSCL_autoland{
 		int16_t ref_yaw;
 		int16_t ref_pitch;
 		int16_t ref_roll;
+		//functions to update each individual control; may need to make these public later, not required at this time
+		void elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNow);
+		void throttle_update(float uNow,int16_t alt_cm);
+		void aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, float phiNow);
 		// functions to compute control deflections
 		void theta_cmd(float thetaRefNow, float thetaNow);
 		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow);

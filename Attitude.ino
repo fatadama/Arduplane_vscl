@@ -411,7 +411,7 @@ static void set_servos(void)
         }
     } else if(control_mode == FLY_BY_WIRE_B) {
 		//VSCL - COMPUTE controls here but DO NOT implement
-		//calc_pwn sets the radio_out value. Can I just call calc_pwn, then pass through afterwards to overwrite??
+		// set the secondary aileron to mimic the primary, then perform calc_pwm() for all other channels
 		if (g.mix_mode == 0) {
                     // both types of secondary aileron are slaved to the roll servo out
                     RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, g.channel_roll.servo_out);
@@ -438,7 +438,6 @@ static void set_servos(void)
                 if (gcs3.initialised) {
                   mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_CONTROLS, 0);
                 }
-				/*
 	//MANUAL OVERRIDES:
 		//roll,pitch
 		g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
@@ -450,7 +449,7 @@ static void set_servos(void)
                 RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
 		//now pass through values directly as in MANUAL mode
 		g.channel_throttle.radio_out    = g.channel_throttle.radio_in;
-                g.channel_rudder.radio_out = g.channel_rudder.radio_in;*/
+                g.channel_rudder.radio_out = g.channel_rudder.radio_in;
 	}
     else {
         if (g.mix_mode == 0) {

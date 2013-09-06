@@ -1,5 +1,11 @@
 //autoland.cpp - function definitions for VSCL_autoland class
 
+/*
+	THROTTLE, ELEVATOR, AILERON, ROLL, AND PITCH ANGLES ARE CONSTRAINED
+	CONSTRAINED aileron, elevator, pitch, and roll are stored in history vectors. This is somewhat different
+	than what I did in simulation. This is a possible source of error if behavior is strange.
+*/
+
 #include "autoland.h"
 
 //runway settings, as defines
@@ -142,10 +148,10 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	updateTransfer(4,4,Fl_num,Fl_den,theta_1,theta_ref);
 //update deltae_c (radians)
 	updateTransfer(4,4,Gl_num,Gl_den,deltae,theta_1,theta);
+	//constrain elevator to +/- .7853 radians = 45.00 deg
+	deltae[0] = constrain(deltae[0],-.7853,.7853);
 //set the output value in centidegrees
 	elevator_out = int16_t(deltae[0]*5730);
-	//constrain elevator out
-	elevator_out = constrain(elevator_out,-4500,4500);
 //store theta_ref and elevator command:
 	ref_pitch = int16_t(thetaRefNow*10000);//10^-4 radians
 }
@@ -189,7 +195,7 @@ elevator_update(float thetaNow)
 INPUTS:
 	thetaNow - current pitch angle in radians, pitch up is positive
 */
-void VSCL_autoland::elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm, float thetaNow)
+void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNow)
 {
 	static int16_t alt_last_cm = 0;//static variable that stores the previous altitude
 //handle reset
@@ -204,12 +210,6 @@ void VSCL_autoland::elevator_update(int32_t lat_e7, int32_t lng_e7, int16_t alt_
 	if (alt_cm>h_flare)
 	{
 //glideslope tracking branch
-		//compute relative GPS coordinates
-		lat_e7 -= LOC_LAT;
-		lng_e7 -= LOC_LONG;
-		//compute relative X-Y coordinates
-		int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
-		int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
 		//compute current glideslope angle:
 		float gammaNow = (alt_cm)/abs(x_lcl);
 		//call glideslope tracker with a constant 5 deg glideslope
@@ -265,10 +265,10 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(3,3,F_num,F_den,phi_1,phi_ref);
 //commanded aileron:
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
+	//constrain aileron to +/- .7853 rad = 45.00 deg
+	deltaa_c[0] = constrain(deltaa_c[0],-.7853,.7853);
 //set target aileron
 	aileron_out = int16_t(deltaa_c[0]*5730);
-	//constrain elevator out
-	aileron_out = constrain(aileron_out,-4500,4500);
 //store values in status vector
 	ref_roll = int16_t(phiRefNow*10000);
 }
@@ -344,16 +344,9 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 	psi_cmd(psi_ref[0],psiNow,phiNow,range);
 }
 
-void VSCL_autoland::aileron_update(int32_t lat_e7, int32_t lng_e7,float psiNow, float phiNow)
+void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, float phiNow)
 {
-	//need to compute lambda, input arguments are psi and phi
-	//compute relative GPS coordinates
-	lat_e7 -= LOC_LAT;
-	lng_e7 -= LOC_LONG;
-	//compute relative X-Y coordinates
-	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
-	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
-	//compute localizer angle
+//compute localizer angle
 	float lambdaNow = -y_lcl/abs(x_lcl);//radians
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
@@ -465,10 +458,10 @@ int16_t VSCL_autoland::phi_get()
 void VSCL_autoland::reset()
 {
 	_reset = 1;
-	//call functions
+	//call functions to reset
 	theta_cmd(0,0);
 	glideslope_cmd(0,0,0);
-	elevator_update(0,0,0,0);
+	elevator_update(0,0,0.0);
 	phi_cmd(0,0);
 	psi_cmd(0,0,0,0);
 	localizer_cmd(0,0,0,0);
@@ -476,4 +469,21 @@ void VSCL_autoland::reset()
 	airspeed_cmd(0,0);
 	//return to normal operation
 	_reset = 0;
+}
+
+void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float uNow, float thetaNow, float psiNow,float phiNow)
+{
+//compute X Y Z location in runway-centric NED style frame
+//compute relative GPS coordinates
+	lat_e7 -= LOC_LAT;
+	lng_e7 -= LOC_LONG;
+//compute relative X-Y coordinates
+	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
+	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
+//update elevator:
+	elevator_update(x_lcl,alt_cm,thetaNow);
+//update aileron:
+	aileron_update(x_lcl,y_lcl,psiNow,phiNow);
+//update throttle
+	throttle_update(uNow,alt_cm);
 }
