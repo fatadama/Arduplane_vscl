@@ -659,19 +659,9 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 		
     //VSCL new msg transmission:
     case MSG_VSCL_TEST:
-	CHECK_PAYLOAD_SIZE(VSCL_TEST);//automatically parses argument into MAVLINK_MSG_ID_arg_
-	//send command here
-	mavlink_msg_vscl_test_send(chan,VSCL_PHI);//transmit the current bank angle back
 	break;
 	
     case MSG_VSCL_BUMP:
-	//this is when SENDING a bump message
-	//send airspeed target
-	CHECK_PAYLOAD_SIZE(VSCL_BUMP);
-	mavlink_msg_vscl_bump_send(chan,VSCL_SPD,1);
-	//send altitude target
-	CHECK_PAYLOAD_SIZE(VSCL_BUMP);
-	mavlink_msg_vscl_bump_send(chan,VSCL_ALT,0);
 	break;
 	
 	case MSG_VSCL_CONTROLS:
@@ -1924,13 +1914,6 @@ mission_failed:
 //VSCL: add a case to process custom MAVlink telemetry:
     case MAVLINK_MSG_ID_VSCL_TEST:
     {
-	//update the vscl commanded bank angle with the new transmission:
-	VSCL_PHI = mavlink_msg_vscl_test_get_dummy(msg);
-    //bounce the current commanded bank angle back for confirmation
-	mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_TEST, 0);
-	if (gcs3.initialised) {
-		mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_TEST, 0);
-	}
 	break;
     }
     case MAVLINK_MSG_ID_VSCL_BUMP:
@@ -1938,22 +1921,6 @@ mission_failed:
     //read the bump ID:
         uint8_t bumpID = mavlink_msg_vscl_bump_get_bumpID(msg);
 	//adjust the appropriate value:
-	if(bumpID==0)
-	{
-	    //bump altitude with the value from message
-	    VSCL_ALT += mavlink_msg_vscl_bump_get_bumpval(msg);
-	    //bounce back BUMP messsage with current value of VSCL_ALT as confirmation:
-        }
-	if(bumpID==1)
-	{
-	    //bump airspeed target:
-	    VSCL_SPD += mavlink_msg_vscl_bump_get_bumpval(msg);
-	}
-    //bounce back BUMP messsage with current value of VSCL_SPD as confirmation:
-      mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_BUMP, 0);
-      if (gcs3.initialised) {
-          mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_BUMP, 0);
-      }
     }
     default:
         // forward unknown messages to the other link if there is one

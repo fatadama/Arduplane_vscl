@@ -87,11 +87,6 @@ static void calc_airspeed_errors()
     // Normal airspeed target
     target_airspeed_cm = g.airspeed_cruise_cm;//this value should be 11 m/s (VSCL target for FBWB)
 
-    // VSCL FBW_B airspeed target
-    if (control_mode == FLY_BY_WIRE_B) {
-        target_airspeed_cm = VSCL_SPD;//1100 cm/s??
-    }
-
     // Set target to current airspeed + ground speed undershoot,
     // but only when this is faster than the target airspeed commanded
     // above.
