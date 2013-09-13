@@ -74,7 +74,7 @@ static void stabilize()
 		//apply the autoland values
 			g.channel_pitch.servo_out = autoland.elevator_get();
 			g.channel_roll.servo_out = autoland.aileron_get();
-			g.channel_throttle.servo_out = 0*autoland.throttle_get();
+			g.channel_throttle.servo_out = autoland.throttle_get();
 		}
 		return;
 	}
