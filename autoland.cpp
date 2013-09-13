@@ -17,6 +17,8 @@ static const int32_t LOC_LONG = -964850333;
 static const int16_t COS_ETA_R_CONST = -11132;
 //SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
 static const int16_t SIN_ETA_R_CONST = 0;
+//ETA_R: angle from the local north TO the direction of landing on the runway. Required to properly determine yaw angle relative to the runway.
+static const float ETA_R = 3.14159265359;
 //flare altitude (cm):
 static const uint8_t h_flare = 400;
 
@@ -295,9 +297,9 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 		return;
 	}
 //update values:
-	psi = psiNow;
-//avoid singularity at X = 0 (local NED coordinate)
-	if(abs(range)>10)
+	psi = psiNow - ETA_R;
+//avoid singularity at X = 0 (local NED coordinate), recall range is in centimeters
+	if(abs(range)>1000)
 	{
 		updateCommanded(4,psiRefNow,psi_ref);
 	}
