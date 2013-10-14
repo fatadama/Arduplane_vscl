@@ -378,6 +378,29 @@ static void Log_Write_Current()
     DataFlash.WriteByte(END_BYTE);
 }
 
+//116 bytes?
+static void Log_Write_Autoland()
+{
+	DataFlash.WriteByte(HEAD_BYTE1);
+    DataFlash.WriteByte(HEAD_BYTE2);
+    DataFlash.WriteByte(LOG_AUTOLAND_MSG);
+	//write time and autoland status
+	//autoland.psi_get(),autoland.theta_get(),autoland.phi_get(),autoland.elevator_get(),autoland.throttle_get(),autoland.aileron_get()
+	DataFlash.WriteLong(millis());
+	DataFlash.WriteLong(autoland.psi_get());
+	DataFlash.WriteLong(autoland.theta_get());
+	DataFlash.WriteLong(autoland.phi_get());
+	DataFlash.WriteLong(autoland.elevator_get());
+	DataFlash.WriteLong(autoland.throttle_get());
+	DataFlash.WriteLong(autoland.aileron_get());
+	DataFlash.WriteByte(END_BYTE);
+}
+
+static void Log_Read_Autoland()
+{
+	
+}
+
 // Read a Current packet
 static void Log_Read_Current()
 {
