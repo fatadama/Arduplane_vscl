@@ -74,7 +74,7 @@ static void stabilize()
 		//apply the autoland values
 			g.channel_pitch.servo_out = autoland.elevator_get();
 			g.channel_roll.servo_out = autoland.aileron_get();
-			g.channel_throttle.servo_out = 0*autoland.throttle_get();
+			g.channel_throttle.servo_out = autoland.throttle_get();
 		}
 		return;
 	}
@@ -411,6 +411,9 @@ static void set_servos(void)
         }
     } else if(control_mode == FLY_BY_WIRE_B) {
 		//VSCL - COMPUTE controls here but DO NOT implement
+	// before REALLY implementing this, add the conversion from desired degrees out to commanded degrees out, based on hardware tests
+	//it looks like I can specify a different value to the AUX aileron, but I need to check. Also, verify deflection direction before flying anything.
+	//Store constants in main() somewhere??
 		// set the secondary aileron to mimic the primary, then perform calc_pwm() for all other channels
 		if (g.mix_mode == 0) {
                     // both types of secondary aileron are slaved to the roll servo out
@@ -431,7 +434,7 @@ static void set_servos(void)
 		g.channel_throttle.calc_pwm();
 #endif
 		//throttle slew limit in FBWB mode:?
-		//throttle_slew_limit(last_throttle);
+		throttle_slew_limit(last_throttle);
 		
 		//now I need to transmit these data to the ground
 		mavlink_send_message(MAVLINK_COMM_0, MSG_VSCL_CONTROLS, 0);

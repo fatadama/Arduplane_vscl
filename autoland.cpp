@@ -17,6 +17,8 @@ static const int32_t LOC_LONG = -964850333;
 static const int16_t COS_ETA_R_CONST = -11132;
 //SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
 static const int16_t SIN_ETA_R_CONST = 0;
+//ETA_R: angle from the local north TO the direction of landing on the runway. Required to properly determine yaw angle relative to the runway.
+static const float ETA_R = 3.14159265359;
 //flare altitude (cm):
 static const uint8_t h_flare = 400;
 
@@ -90,6 +92,8 @@ VSCL_autoland::VSCL_autoland()
 	elevator_out = 0;
 	aileron_out = 0;
 	throttle_out = 0;
+	elevator_servo = 0;
+	aileron_servo = 0;
 	ref_yaw = -3159;//=-181 degrees, intended to signal the variable has not been initialized
 	ref_pitch = -3159;
 	ref_roll = -3159;
@@ -97,10 +101,11 @@ VSCL_autoland::VSCL_autoland()
 	return;
 }
 
-//elevator_get(): returns the current commanded elevator deflection in centidegrees
+//elevator_get(): returns the servo output to achieve current commanded elevator deflection in centidegrees
 int16_t VSCL_autoland::elevator_get()
 {
-	return elevator_out;
+	//return elevator_out;
+	return elevator_servo;
 }
 
 //throttle_get(): returns the current commanded throttle in centidegrees??
@@ -109,10 +114,12 @@ int16_t VSCL_autoland::throttle_get()
 	return throttle_out;
 }
 
-//aileron_get(): returns the current commanded aileron in centidegrees
+//aileron_get(): returns the servo output to achieve current commanded aileron in centidegrees
+	//CHECK THAT SERVO UNITS SHOULD BE CENTIDEGREES
 int16_t VSCL_autoland::aileron_get()
 {
-	return aileron_out;
+	//return aileron_out;
+	return aileron_servo;
 }
 
 void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
@@ -267,7 +274,7 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
 	//constrain aileron to +/- .7853 rad = 45.00 deg
 	deltaa_c[0] = constrain(deltaa_c[0],-.7853,.7853);
-//set target aileron
+//set target aileron in centidegrees
 	aileron_out = int16_t(deltaa_c[0]*5730);
 //store values in status vector
 	ref_roll = int16_t(phiRefNow*10000);
@@ -295,9 +302,9 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 		return;
 	}
 //update values:
-	psi = psiNow;
-//avoid singularity at X = 0 (local NED coordinate)
-	if(abs(range)>10)
+	psi = psiNow - ETA_R;
+//avoid singularity at X = 0 (local NED coordinate), recall range is in centimeters
+	if(abs(range)>1000)
 	{
 		updateCommanded(4,psiRefNow,psi_ref);
 	}
@@ -486,4 +493,13 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 	aileron_update(x_lcl,y_lcl,psiNow,phiNow);
 //update throttle
 	throttle_update(uNow,alt_cm);
+//compute the servo outputs
+	servo_compute();
+}
+
+void VSCL_autoland::servo_compute()
+{
+	elevator_servo = 1.412*elevator_out;//uses linear approximation tan(x)~~x. Check the sign of the deflection here
+	aileron_servo = 0.8*aileron_out;//check the sign
+	
 }

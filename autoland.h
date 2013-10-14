@@ -48,10 +48,15 @@ class VSCL_autoland{
 		int16_t elevator_out;
 		int16_t throttle_out;//throttle output is in percentage?
 		int16_t aileron_out;
+		//current commanded angle in SERVO units (centidegrees)
+		int16_t elevator_servo;
+		int16_t aileron_servo;
 		//current commanded angles of each axis in 10^-4 radians
 		int16_t ref_yaw;
 		int16_t ref_pitch;
 		int16_t ref_roll;
+		//function to convert computed control deflections to servo outputs
+		void servo_compute();
 		//functions to update each individual control; may need to make these public later, not required at this time
 		void elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNow);
 		void throttle_update(float uNow,int16_t alt_cm);
