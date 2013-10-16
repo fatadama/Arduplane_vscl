@@ -379,6 +379,7 @@ static void Log_Write_Current()
 }
 
 //116 bytes?
+/*
 static void Log_Write_Autoland()
 {
 	DataFlash.WriteByte(HEAD_BYTE1);
@@ -394,7 +395,7 @@ static void Log_Write_Autoland()
 	DataFlash.WriteLong(autoland.throttle_get());
 	DataFlash.WriteLong(autoland.aileron_get());
 	DataFlash.WriteByte(END_BYTE);
-}
+}*/
 
 static void Log_Read_Autoland()
 {

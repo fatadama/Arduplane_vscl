@@ -97,6 +97,8 @@ VSCL_autoland::VSCL_autoland()
 	ref_yaw = -3159;//=-181 degrees, intended to signal the variable has not been initialized
 	ref_pitch = -3159;
 	ref_roll = -3159;
+	ref_gamma = -3159;
+	ref_lambda = -3159;
 	_reset = 0;
 	return;
 }
@@ -219,6 +221,7 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 //glideslope tracking branch
 		//compute current glideslope angle:
 		float gammaNow = (alt_cm)/abs(x_lcl);
+		ref_gamma = 10000*gammaNow;
 		//call glideslope tracker with a constant 5 deg glideslope
 		glideslope_cmd(.08727, 
 			gammaNow,
@@ -355,6 +358,7 @@ void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, fl
 {
 //compute localizer angle
 	float lambdaNow = -y_lcl/abs(x_lcl);//radians
+	ref_lambda = 10000*lambdaNow;
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
 }
@@ -460,6 +464,16 @@ int16_t VSCL_autoland::theta_get()
 int16_t VSCL_autoland::phi_get()
 {
 	return ref_roll;
+}
+
+int16_t VSCL_autoland::gamma_get()
+{
+	return ref_gamma;
+}
+
+int16_t VSCL_autoland::lambda_get()
+{
+	return ref_lambda;
 }
 
 void VSCL_autoland::reset()

@@ -40,6 +40,8 @@ class VSCL_autoland{
 		int16_t psi_get();//returns heading reference in 10^-4 radians
 		int16_t theta_get();//returns pitch reference in 10^-4 radians
 		int16_t phi_get();//returns roll reference in 10^-4 radians
+		int16_t gamma_get();//returns glideslope reference in 10^-4 radians
+		int16_t lambda_get();//returns localizer reference in 10^-4 radians
 		void reset();//function to reset the static arrays in the control computation functions
 	private:
 		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
@@ -55,6 +57,8 @@ class VSCL_autoland{
 		int16_t ref_yaw;
 		int16_t ref_pitch;
 		int16_t ref_roll;
+		int16_t ref_gamma;//stores glideslope angle in 10^-4 radians
+		int16_t ref_lambda;//localizer angle in 10^-4 radians
 		//function to convert computed control deflections to servo outputs
 		void servo_compute();
 		//functions to update each individual control; may need to make these public later, not required at this time
