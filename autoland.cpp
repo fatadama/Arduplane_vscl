@@ -13,10 +13,10 @@
 static const int32_t LOC_LAT = 306378999;
 //localizer global longitude in degrees*10^7
 static const int32_t LOC_LONG = -964850333;
-//ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-static const int16_t COS_ETA_R_CONST = -11132;
+//ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e2*1e-7*radius_of_earth*d2r()
+static const float COS_ETA_R_CONST = -1.1132;
 //SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
-static const int16_t SIN_ETA_R_CONST = 0;
+static const float SIN_ETA_R_CONST = 0.0;
 //ETA_R: angle from the local north TO the direction of landing on the runway. Required to properly determine yaw angle relative to the runway.
 static const float ETA_R = 3.14159265359;
 //flare altitude (cm):
@@ -216,6 +216,7 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 //computes and sets elevator_out
 	//for now, compute gammaNow from GPS coords passed to this function
 		//later, group everything under a single update() function but use separate functions for debugging
+	ref_gamma = 10000.0*(alt_cm)/abs(x_lcl);
 	if (alt_cm>h_flare)
 	{
 //glideslope tracking branch
@@ -466,12 +467,12 @@ int16_t VSCL_autoland::phi_get()
 	return ref_roll;
 }
 
-int16_t VSCL_autoland::gamma_get()
+int32_t VSCL_autoland::gamma_get()
 {
 	return ref_gamma;
 }
 
-int16_t VSCL_autoland::lambda_get()
+int32_t VSCL_autoland::lambda_get()
 {
 	return ref_lambda;
 }
@@ -513,6 +514,6 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 
 void VSCL_autoland::servo_compute()
 {
-	elevator_servo = -253.22*elevator_out+741.65;//uses linear approximation tan(x)~~x. Check the sign of the deflection here
-	aileron_servo = -382.57*aileron_out-1776;//check the sign
+	elevator_servo = -2.5322*elevator_out+741.65;//uses linear approximation tan(x)~~x. Check the sign of the deflection here
+	aileron_servo = -3.8257*aileron_out-1776;//check the sign
 }
