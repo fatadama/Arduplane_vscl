@@ -513,7 +513,6 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 
 void VSCL_autoland::servo_compute()
 {
-	elevator_servo = 1.412*elevator_out;//uses linear approximation tan(x)~~x. Check the sign of the deflection here
-	aileron_servo = 0.8*aileron_out;//check the sign
-	
+	elevator_servo = -253.22*elevator_out+741.65;//uses linear approximation tan(x)~~x. Check the sign of the deflection here
+	aileron_servo = -382.57*aileron_out-1776;//check the sign
 }

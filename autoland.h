@@ -46,7 +46,7 @@ class VSCL_autoland{
 	private:
 		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
 		int32_t last_update;
-		//current commanded angle of each channel
+		//current commanded angle of each channel, angles in centidegrees
 		int16_t elevator_out;
 		int16_t throttle_out;//throttle output is in percentage?
 		int16_t aileron_out;
