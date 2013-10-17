@@ -221,7 +221,7 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 //glideslope tracking branch
 		//compute current glideslope angle:
 		float gammaNow = (alt_cm)/abs(x_lcl);
-		ref_gamma = 10000*gammaNow;
+		ref_gamma = 10000.0*gammaNow;
 		//call glideslope tracker with a constant 5 deg glideslope
 		glideslope_cmd(.08727, 
 			gammaNow,
@@ -358,7 +358,7 @@ void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, fl
 {
 //compute localizer angle
 	float lambdaNow = -y_lcl/abs(x_lcl);//radians
-	ref_lambda = 10000*lambdaNow;
+	ref_lambda = 10000.0*lambdaNow;
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
 }
