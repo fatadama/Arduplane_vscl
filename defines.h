@@ -127,6 +127,7 @@ enum ap_message {
     MSG_VSCL_BUMP,//new command to bump alt/airspeed
 	MSG_VSCL_CONTROLS,//command to transmit control deflections
 	MSG_VSCL_AUTOLAND,//command to transmit autolander status
+	MSG_DIAGNOSTIC,//debugging command
     MSG_RETRY_DEFERRED // this must be last
 };
 

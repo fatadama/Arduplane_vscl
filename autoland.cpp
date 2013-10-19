@@ -15,7 +15,7 @@ static const int32_t LOC_LAT = 306378999;
 static const int32_t LOC_LONG = -964850333;
 //ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e2*1e-7*radius_of_earth*d2r()
 static const float COS_ETA_R_CONST = -1.1132;
-//SIN_ETA_R = sin(ETA_R)*1e4*1e-5*radius_of_earth*d2r()
+//SIN_ETA_R = sin(ETA_R)*1e-5*radius_of_earth*d2r()
 static const float SIN_ETA_R_CONST = 0.0;
 //ETA_R: angle from the local north TO the direction of landing on the runway. Required to properly determine yaw angle relative to the runway.
 static const float ETA_R = 3.14159265359;
@@ -104,21 +104,21 @@ VSCL_autoland::VSCL_autoland()
 }
 
 //elevator_get(): returns the servo output to achieve current commanded elevator deflection in centidegrees
-int16_t VSCL_autoland::elevator_get()
+int32_t VSCL_autoland::elevator_get()
 {
 	//return elevator_out;
 	return elevator_servo;
 }
 
 //throttle_get(): returns the current commanded throttle in centidegrees??
-int16_t VSCL_autoland::throttle_get()
+int32_t VSCL_autoland::throttle_get()
 {
 	return throttle_out;
 }
 
 //aileron_get(): returns the servo output to achieve current commanded aileron in centidegrees
 	//CHECK THAT SERVO UNITS SHOULD BE CENTIDEGREES
-int16_t VSCL_autoland::aileron_get()
+int32_t VSCL_autoland::aileron_get()
 {
 	//return aileron_out;
 	return aileron_servo;
@@ -160,9 +160,9 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	//constrain elevator to +/- .7853 radians = 45.00 deg
 	deltae[0] = constrain(deltae[0],-.7853,.7853);
 //set the output value in centidegrees
-	elevator_out = int16_t(deltae[0]*5730);
+	elevator_out = int32_t(deltae[0]*5730);
 //store theta_ref and elevator command:
-	ref_pitch = int16_t(thetaRefNow*10000);//10^-4 radians
+	ref_pitch = int32_t(thetaRefNow*10000);//10^-4 radians
 }
 
 void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow)
@@ -278,10 +278,11 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
 	//constrain aileron to +/- .7853 rad = 45.00 deg
 	deltaa_c[0] = constrain(deltaa_c[0],-.7853,.7853);
+	DIAG4 = deltaa_c[0];
 //set target aileron in centidegrees
-	aileron_out = int16_t(deltaa_c[0]*5730);
+	aileron_out = int32_t(deltaa_c[0]*5730);
 //store values in status vector
-	ref_roll = int16_t(phiRefNow*10000);
+	ref_roll = int32_t(phiRefNow*10000);
 }
 
 void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range)
@@ -328,7 +329,7 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 //call aileron control function
 	phi_cmd(phi_ref,phiNow);
 //store reference heading in status vector
-	ref_yaw = int16_t(10000*psiRefNow);
+	ref_yaw = int32_t(10000*psiRefNow);
 }
 
 void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range)
@@ -352,6 +353,7 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 //update psi_ref:
 	updateTransfer(3,3,G_num0,G_den0,psi_ref,lambda);
 //call heading reference function
+DIAG2 = psi_ref[0];
 	psi_cmd(psi_ref[0],psiNow,phiNow,range);
 }
 
@@ -359,6 +361,7 @@ void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, fl
 {
 //compute localizer angle
 	float lambdaNow = -y_lcl/abs(x_lcl);//radians
+	DIAG1 = lambdaNow;
 	ref_lambda = 10000.0*lambdaNow;
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
@@ -452,17 +455,17 @@ void VSCL_autoland::throttle_update(float uNow,int16_t alt_cm)
 	}
 }
 
-int16_t VSCL_autoland::psi_get()
+int32_t VSCL_autoland::psi_get()
 {
 	return ref_yaw;
 }
 
-int16_t VSCL_autoland::theta_get()
+int32_t VSCL_autoland::theta_get()
 {
 	return ref_pitch;
 }
 
-int16_t VSCL_autoland::phi_get()
+int32_t VSCL_autoland::phi_get()
 {
 	return ref_roll;
 }
@@ -502,6 +505,8 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 //compute relative X-Y coordinates
 	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
 	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
+	DIAG4 = x_lcl;
+	DIAG5 = y_lcl;
 //update elevator:
 	elevator_update(x_lcl,alt_cm,thetaNow);
 //update aileron:

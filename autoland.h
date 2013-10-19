@@ -34,29 +34,30 @@ class VSCL_autoland{
 	//functions to compute output values
 		void update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float uNow, float thetaNow, float psiNow,float phiNow);
 	//functions to access commanded settings
-		int16_t elevator_get();//returns values in centidegrees
-		int16_t throttle_get();
-		int16_t aileron_get();
-		int16_t psi_get();//returns heading reference in 10^-4 radians
-		int16_t theta_get();//returns pitch reference in 10^-4 radians
-		int16_t phi_get();//returns roll reference in 10^-4 radians
+		int32_t elevator_get();//returns values in centidegrees
+		int32_t throttle_get();
+		int32_t aileron_get();
+		int32_t psi_get();//returns heading reference in 10^-4 radians
+		int32_t theta_get();//returns pitch reference in 10^-4 radians
+		int32_t phi_get();//returns roll reference in 10^-4 radians
 		int32_t gamma_get();//returns glideslope reference in 10^-4 radians
 		int32_t lambda_get();//returns localizer reference in 10^-4 radians
 		void reset();//function to reset the static arrays in the control computation functions
+                float DIAG1,DIAG2,DIAG3,DIAG4,DIAG5;//DEBUGGING FLOATS
 	private:
 		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
 		int32_t last_update;
-		//current commanded angle of each channel, angles in centidegrees
-		int16_t elevator_out;
-		int16_t throttle_out;//throttle output is in percentage?
-		int16_t aileron_out;
+		//current commanded angle of each channel. 
+		int32_t elevator_out;
+		int32_t throttle_out;//throttle output is in percentage?
+		int32_t aileron_out;
 		//current commanded angle in SERVO units (centidegrees)
-		int16_t elevator_servo;
-		int16_t aileron_servo;
+		int32_t elevator_servo;
+		int32_t aileron_servo;
 		//current commanded angles of each axis in 10^-4 radians
-		int16_t ref_yaw;
-		int16_t ref_pitch;
-		int16_t ref_roll;
+		int32_t ref_yaw;
+		int32_t ref_pitch;
+		int32_t ref_roll;
 		int32_t ref_gamma;//stores glideslope angle in 10^-4 radians
 		int32_t ref_lambda;//localizer angle in 10^-4 radians
 		//function to convert computed control deflections to servo outputs
