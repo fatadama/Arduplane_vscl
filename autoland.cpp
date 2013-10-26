@@ -149,7 +149,9 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 		}
 		return;
 	}
-	
+//diagnostics
+	DIAG1 = thetaRefNow;
+	DIAG2 = thetaNow;
 //update theta and thetaRef
 	updateCommanded(4,thetaRefNow,theta_ref);
 	updateCommanded(4,thetaNow,theta);
@@ -215,13 +217,12 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 	}
 //computes and sets elevator_out
 	//for now, compute gammaNow from GPS coords passed to this function
-		//later, group everything under a single update() function but use separate functions for debugging
-	ref_gamma = 10000.0*(alt_cm)/abs(x_lcl);
+	ref_gamma = (10000.0*alt_cm)/abs(x_lcl);
 	if (alt_cm>h_flare)
 	{
 //glideslope tracking branch
 		//compute current glideslope angle:
-		float gammaNow = (alt_cm)/abs(x_lcl);
+		float gammaNow = float(alt_cm)/abs(x_lcl);
 		ref_gamma = 10000.0*gammaNow;
 		//call glideslope tracker with a constant 5 deg glideslope
 		glideslope_cmd(.08727, 
@@ -278,11 +279,10 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
 	//constrain aileron to +/- .7853 rad = 45.00 deg
 	deltaa_c[0] = constrain(deltaa_c[0],-.7853,.7853);
-	DIAG4 = deltaa_c[0];
 //set target aileron in centidegrees
 	aileron_out = int32_t(deltaa_c[0]*5730);
 //store values in status vector
-	ref_roll = int32_t(phiRefNow*10000);
+	ref_roll = int32_t(phiRefNow*10000.0);
 }
 
 void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range)
@@ -329,7 +329,7 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 //call aileron control function
 	phi_cmd(phi_ref,phiNow);
 //store reference heading in status vector
-	ref_yaw = int32_t(10000*psiRefNow);
+	ref_yaw = int32_t(10000.*psiRefNow);
 }
 
 void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range)
@@ -353,15 +353,13 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 //update psi_ref:
 	updateTransfer(3,3,G_num0,G_den0,psi_ref,lambda);
 //call heading reference function
-DIAG2 = psi_ref[0];
 	psi_cmd(psi_ref[0],psiNow,phiNow,range);
 }
 
 void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, float phiNow)
 {
 //compute localizer angle
-	float lambdaNow = -y_lcl/abs(x_lcl);//radians
-	DIAG1 = lambdaNow;
+	float lambdaNow = -float(y_lcl)/abs(x_lcl);//radians
 	ref_lambda = 10000.0*lambdaNow;
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
@@ -394,6 +392,8 @@ void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
 		hdot_ref[4] = 0;
 		return;
 	}
+	DIAG3 = hNow;
+	DIAG4 = hdotNow;
 //store reference vertical speed
 	updateCommanded(5,hNow*TAU_INV,hdot_ref);
 //store vertical speed
@@ -505,8 +505,6 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 //compute relative X-Y coordinates
 	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
 	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
-	DIAG4 = x_lcl;
-	DIAG5 = y_lcl;
 //update elevator:
 	elevator_update(x_lcl,alt_cm,thetaNow);
 //update aileron:
