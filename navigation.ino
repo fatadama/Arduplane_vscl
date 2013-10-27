@@ -29,11 +29,6 @@ static void navigate()
 		if (gcs3.initialised) {
 			mavlink_send_message(MAVLINK_COMM_1, MSG_VSCL_AUTOLAND, 0);
 		}
-                //send autoland status to ground for logging:
-            	mavlink_send_message(MAVLINK_COMM_0,MSG_DIAGNOSTIC,0);
-            	if (gcs3.initialised) {
-            		mavlink_send_message(MAVLINK_COMM_1, MSG_DIAGNOSTIC, 0);
-            	}
 		return;
 	}
 	

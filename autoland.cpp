@@ -149,9 +149,6 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 		}
 		return;
 	}
-//diagnostics
-	DIAG1 = thetaRefNow;
-	DIAG2 = thetaNow;
 //update theta and thetaRef
 	updateCommanded(4,thetaRefNow,theta_ref);
 	updateCommanded(4,thetaNow,theta);
@@ -233,7 +230,7 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 	{
 //autoflare branch
 		flare_cmd(.01*alt_cm,
-			.01*float(alt_cm-alt_last_cm)/(.001*(millis()-last_update)),
+			10.*float(alt_cm-alt_last_cm)/(float(millis()-last_update)),
 			thetaNow-theta1);
 	}
 //store the altitude to estimate descent rate
@@ -392,8 +389,6 @@ void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
 		hdot_ref[4] = 0;
 		return;
 	}
-	DIAG3 = hNow;
-	DIAG4 = hdotNow;
 //store reference vertical speed
 	updateCommanded(5,hNow*TAU_INV,hdot_ref);
 //store vertical speed

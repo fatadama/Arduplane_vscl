@@ -677,7 +677,8 @@ static bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id,
 	
 	case MSG_DIAGNOSTIC:
 	CHECK_PAYLOAD_SIZE(DIAGNOSTIC);
-	mavlink_msg_diagnostic_send(chan,autoland.DIAG1,autoland.DIAG2,autoland.DIAG3,autoland.DIAG4,autoland.DIAG5);
+	//mavlink_msg_diagnostic_send(chan,autoland.DIAG1,autoland.DIAG2,autoland.DIAG3,autoland.DIAG4,autoland.DIAG5);
+	mavlink_msg_diagnostic_send(chan,0.0,0.0,0.0,0.0,0.0);
 
     case MSG_RETRY_DEFERRED:
         break; // just here to prevent a warning

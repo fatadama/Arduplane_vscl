@@ -43,7 +43,6 @@ class VSCL_autoland{
 		int32_t gamma_get();//returns glideslope reference in 10^-4 radians
 		int32_t lambda_get();//returns localizer reference in 10^-4 radians
 		void reset();//function to reset the static arrays in the control computation functions
-                float DIAG1,DIAG2,DIAG3,DIAG4,DIAG5;//DEBUGGING FLOATS
 	private:
 		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
 		int32_t last_update;
