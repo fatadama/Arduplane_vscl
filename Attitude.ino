@@ -443,15 +443,15 @@ static void set_servos(void)
                 }
 	//MANUAL OVERRIDES:
 		//roll,pitch
-		g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
-                g.channel_pitch.radio_out               = APM_RC.InputCh(CH_PITCH);
+		//g.channel_roll.radio_out                = APM_RC.InputCh(CH_ROLL);
+                //g.channel_pitch.radio_out               = APM_RC.InputCh(CH_PITCH);
 		//secondary aileron?
-		int16_t aileron_in = g.channel_roll.pwm_to_angle_dz(0);
-                RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, aileron_in);
+		//int16_t aileron_in = g.channel_roll.pwm_to_angle_dz(0);
+                //RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, aileron_in);
                 //
-                RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
+                //RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
 		//now pass through values directly as in MANUAL mode
-		g.channel_throttle.radio_out    = g.channel_throttle.radio_in;
+		//g.channel_throttle.radio_out    = g.channel_throttle.radio_in;
                 g.channel_rudder.radio_out = g.channel_rudder.radio_in;
 	}
     else {

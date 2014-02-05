@@ -14,11 +14,11 @@ static const int32_t LOC_LAT = 306378999;
 //localizer global longitude in degrees*10^7
 static const int32_t LOC_LONG = -964850333;
 //ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e2*1e-7*radius_of_earth*d2r()
-static const float COS_ETA_R_CONST = -1.1132;
+static const float COS_ETA_R_CONST = -1.1132;//-0.78637;//-1.1132;
 //SIN_ETA_R = sin(ETA_R)*1e-5*radius_of_earth*d2r()
-static const float SIN_ETA_R_CONST = 0.0;
+static const float SIN_ETA_R_CONST = 0.0;//0.78637;//0.0;
 //ETA_R: angle from the local north TO the direction of landing on the runway. Required to properly determine yaw angle relative to the runway.
-static const float ETA_R = 3.14159265359;
+static const float ETA_R = 3.14159265359;//2.3561945;
 //flare altitude (cm):
 static const uint8_t h_flare = 400;
 
@@ -194,6 +194,7 @@ void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thet
 		theta_ref[0] = constrain(theta_ref[0],-.3491,.3491);
 	}
 //call theta_cmd to update elevator command
+        theta_ref[0] = 0;
 	theta_cmd(theta_ref[0],thetaNow);
 }
 
@@ -248,32 +249,35 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 	static float F_num[] = {1,0,0};
 	static float F_den[] = {46.2943565401117, -68.8117701713310,	23.5174136312193};
 	static float phi_ref[] = {0,0,0};
-	static float phi_1[] = {0,0,0,0,0};
-	static float phi[] = {0,0,0,0,0};
+	static float phi_1[] = {0,0,0};
+	
+	static float phi_2[] = {0,0,0,0,0};
+	//static float phi[] = {0,0,0,0,0};
 	static float deltaa_c[] = {0,0,0,0,0};
 //handle reset
 	if (_reset)
 	{
 		for(int ii = 0;ii<5;ii++)
 		{
-			phi_1[ii] = 0;
-			phi[ii] = 0;
+			phi_2[ii] = 0;
 			deltaa_c[ii] = 0;
 		}
-		phi_ref[0] = 0;
-		phi_ref[1] = 0;
-		phi_ref[2] = 0;
+		for(int ii = 0;ii<3;ii++)
+		{
+			phi_1[ii] = 0;
+			phi_ref[ii] = 0;
+		}
 		return;
 	}
 //update commanded values
-	updateCommanded(5,phiNow,phi);
+	//updateCommanded(5,phiNow,phi);
 	updateCommanded(3,phiRefNow,phi_ref);
 //filtered state:
-	//manually update phi_1[4] and phi_1[3], because updateTransfer only covers phi_1[0:2]
-	phi_1[4] = phi_1[3];phi_1[3] = phi_1[2];
 	updateTransfer(3,3,F_num,F_den,phi_1,phi_ref);
+// error state:
+	updateCommanded(5,phi_1[0]-phiNow,phi_2);
 //commanded aileron:
-	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_1,phi);
+	updateTransfer(5,5,G_num,G_den,deltaa_c,phi_2);
 	//constrain aileron to +/- .7853 rad = 45.00 deg
 	deltaa_c[0] = constrain(deltaa_c[0],-.7853,.7853);
 //set target aileron in centidegrees
@@ -285,55 +289,70 @@ void VSCL_autoland::phi_cmd(float phiRefNow, float phiNow)
 void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range)
 {
 //static arrays
-	static float F_num2[] = {1,-2.90394468693377,2.81265804708752,-0.908421848795803};
-	static float F_den2[] = {0.0878265897919200,-0.174604400295509,0.0911873082359091,-0.00411798637437450};
-	static float psi_ref[] = {0,0,0,0};
-	static float psi_1[] = {0,0,0,0};
-	static float psi = 0;
-	static float phi_ref = 0;
+	static float F_num2[] = {1,-1.65667676113393,0.666113042405827};
+	static float F_den2[] = {15.2680726649204,-29.9262827863,14.6676464026516};
+	static float G_num2[] = {1.0,-0.96364320647571};
+	static float G_den2[] = {0.0382413880786626,-0.001912689195318};
+	const static int Flen = 3,//assume num and den are the same length
+	const static int Glen = 2;//same here
+//
+	static float psi_ref[] = {0,0,0};
+	static float psi_1[] = {0,0,0};
+//
+    static float psi_2[] = {0,0};
+	static float psi[] = {0,0};
+	static float phi_ref[] = {0,0};
 //handle reset
 	if (_reset)
 	{
-		for(int ii = 0;ii<4;ii++)
+		for(int ii = 0;ii<Flen;ii++)
 		{
 			psi_ref[ii] = 0;
 			psi_1[ii] = 0;
 		}
-		psi = 0;
-		phi_ref = 0;
+        for(int ii = 0;ii<Glen;ii++)
+		{
+			psi_2[ii] = 0;
+			psi[ii] = 0;
+			phi_ref[ii] = 0;
+		}
 		return;
 	}
 //update values:
-	psi = psiNow - ETA_R;
+	if((psiNow - ETA_R) < -pi){
+		psiNow += 6.283185307;
+	}
+	else if((psiNow-ETA_R) > pi)
+	{
+		psiNow -= 6.283185307;
+	}
+    updateCommanded(Glen,psiNow-ETA_R,psi);
 //avoid singularity at X = 0 (local NED coordinate), recall range is in centimeters
-	if(abs(range)>1000)
-	{
-		updateCommanded(4,psiRefNow,psi_ref);
-	}
-	else
-	{
-		updateCommanded(4,0,psi_ref);
-	}
+	updateCommanded(Flen,psiRefNow,psi_ref);
 //update filtered state
-	updateTransfer(4,4,F_num2,F_den2,psi_1,psi_ref);
+	updateTransfer(Flen,Flen,F_num2,F_den2,psi_1,psi_ref);
+    updateCommanded(Glen,psi_1[0]-psi[0],psi_2);
 //update commanded bank angle:
-	phi_ref = psi_1[0]-psi;
+    updateTransfer(Glen,Glen,G_num2,G_den2,phi_ref,psi_2);
 //enforce state limits - do not command bank angles above 20 degrees (.3491 rad) if current bank angle is greater than 20
 	if(fabs(phiNow)>.3491)
 	{
-		phi_ref = constrain(phi_ref,-.3491,.3491);
+		phi_ref[0] = constrain(phi_ref[0],-.3491,.3491);
 	}
 //call aileron control function
-	phi_cmd(phi_ref,phiNow);
+	phi_cmd(phi_ref[0],phiNow);
 //store reference heading in status vector
 	ref_yaw = int32_t(10000.*psiRefNow);
 }
 
 void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range)
 {
+//inputs: lambda in radians, psi in radians, phi in radians, range in cm
 //static arrays
-	static float G_num0[] = {1,-1.99340000000000,0.996900000000000};
-	static float G_den0[] = {0.522600000000000,-0.997400000000000,	0.476600000000000};
+	//static float G_num0[] = {1,-1.99340000000000,0.996900000000000};
+	static float G_num0[] = {8.7,-16.2,7.5};
+	//static float G_den0[] = {0.522600000000000,-0.997400000000000,	0.476600000000000};
+	static float G_den0[] = {1.,-1.,0.};
 	static float lambda[] = {0,0,0};
 	static float psi_ref[] = {0,0,0};
 //handle reset
@@ -346,17 +365,23 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 		}
 	}
 //store current value of lambda
-	updateCommanded(3,lambdaNow,lambda);
+	if(abs(range) < 10000){
+		updateCommanded(3,-1.0*lambdaNow,lambda);
+	}
+	else{
+		updateCommanded(3,-.0001*abs(range)*lambdaNow,lambda);
+	}
 //update psi_ref:
 	updateTransfer(3,3,G_num0,G_den0,psi_ref,lambda);
 //call heading reference function
+	psi_ref[0] = 0;
 	psi_cmd(psi_ref[0],psiNow,phiNow,range);
 }
 
 void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, float phiNow)
 {
 //compute localizer angle
-	float lambdaNow = -float(y_lcl)/abs(x_lcl);//radians
+	float lambdaNow = float(y_lcl)/abs(x_lcl);//radians
 	ref_lambda = 10000.0*lambdaNow;
 //call localizer function to compute aileron command:
 	localizer_cmd(lambdaNow,psiNow,phiNow,x_lcl);
