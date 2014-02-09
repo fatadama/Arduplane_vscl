@@ -525,8 +525,8 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 //compute relative X-Y coordinates
 	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
 	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
-//update elevator:
-	elevator_update(x_lcl,alt_cm,thetaNow);
+//update elevator including IMPORTANT altitude offset for testing:
+	elevator_update(x_lcl,alt_cm + alt_testing_offset,thetaNow);
 //update aileron:
 	aileron_update(x_lcl,y_lcl,psiNow,phiNow);
 //update throttle

@@ -14,6 +14,8 @@
 #define U1 12.6431
 //throttle steady-state (.6329)
 #define DELTAT1 63
+//altitude offset for testing glideslope/localizer in centimeters - THIS IS IMPORTANT!
+#define alt_testing_offset 1500
 
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
