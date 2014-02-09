@@ -10,9 +10,9 @@
 
 //runway settings, as defines
 //localizer global latitude in degrees*10^7
-static const int32_t LOC_LAT = 306378999;
+static const int32_t LOC_LAT = 306363981;
 //localizer global longitude in degrees*10^7
-static const int32_t LOC_LONG = -964850333;
+static const int32_t LOC_LONG = -964850664;
 //ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e2*1e-7*radius_of_earth*d2r()
 static const float COS_ETA_R_CONST = -1.1132;//-0.78637;//-1.1132;
 //SIN_ETA_R = sin(ETA_R)*1e-5*radius_of_earth*d2r()
@@ -194,7 +194,6 @@ void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thet
 		theta_ref[0] = constrain(theta_ref[0],-.3491,.3491);
 	}
 //call theta_cmd to update elevator command
-        theta_ref[0] = 0;
 	theta_cmd(theta_ref[0],thetaNow);
 }
 
@@ -293,7 +292,7 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 	static float F_den2[] = {15.2680726649204,-29.9262827863,14.6676464026516};
 	static float G_num2[] = {1.0,-0.96364320647571};
 	static float G_den2[] = {0.0382413880786626,-0.001912689195318};
-	const static int Flen = 3,//assume num and den are the same length
+	const static int Flen = 3;//assume num and den are the same length
 	const static int Glen = 2;//same here
 //
 	static float psi_ref[] = {0,0,0};
@@ -319,10 +318,10 @@ void VSCL_autoland::psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t
 		return;
 	}
 //update values:
-	if((psiNow - ETA_R) < -pi){
+	if((psiNow - ETA_R) < -3.14159){
 		psiNow += 6.283185307;
 	}
-	else if((psiNow-ETA_R) > pi)
+	else if((psiNow-ETA_R) > 3.14159)
 	{
 		psiNow -= 6.283185307;
 	}
@@ -374,7 +373,6 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 //update psi_ref:
 	updateTransfer(3,3,G_num0,G_den0,psi_ref,lambda);
 //call heading reference function
-	psi_ref[0] = 0;
 	psi_cmd(psi_ref[0],psiNow,phiNow,range);
 }
 
@@ -526,7 +524,7 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 	int32_t x_lcl = lat_e7*COS_ETA_R_CONST + lng_e7*SIN_ETA_R_CONST;//cm
 	int32_t y_lcl = lng_e7*COS_ETA_R_CONST - lat_e7*SIN_ETA_R_CONST;//cm
 //update elevator including IMPORTANT altitude offset for testing:
-	elevator_update(x_lcl,alt_cm + alt_testing_offset,thetaNow);
+	elevator_update(x_lcl,alt_cm - alt_testing_offset,thetaNow);
 //update aileron:
 	aileron_update(x_lcl,y_lcl,psiNow,phiNow);
 //update throttle
