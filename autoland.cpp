@@ -10,7 +10,7 @@
 
 //runway settings, as defines
 //localizer global latitude in degrees*10^7
-static const int32_t LOC_LAT = 306363981;
+static const int32_t LOC_LAT = 306371735;
 //localizer global longitude in degrees*10^7
 static const int32_t LOC_LONG = -964850664;
 //ETA_R is the runway direction. COS_ETA_R_CONST = cos(ETA_R)*1e2*1e-7*radius_of_earth*d2r()
@@ -89,6 +89,7 @@ void updateCommanded(int len,float newVal,float array[])
 //constructor - not sure if required but does nothing
 VSCL_autoland::VSCL_autoland()
 {
+	flare_alt = 0;
 	elevator_out = 0;
 	aileron_out = 0;
 	throttle_out = 0;
@@ -164,7 +165,7 @@ void VSCL_autoland::theta_cmd(float thetaRefNow, float thetaNow)
 	ref_pitch = int32_t(thetaRefNow*10000);//10^-4 radians
 }
 
-void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow)
+void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow, int32_t range)
 {
 //static arrays
 	static float Gl_num[] = {5.51,-6.5,1.00};
@@ -184,8 +185,15 @@ void VSCL_autoland::glideslope_cmd(float gammaRefNow, float gammaNow, float thet
 		return;
 	}
 //update gamma_ref and gamma
-	updateCommanded(3,gammaRefNow,gamma_ref);
-	updateCommanded(3,gammaNow,gamma);
+	//if (abs(range) > 5000){
+		updateCommanded(3,gammaRefNow,gamma_ref);
+		updateCommanded(3,gammaNow,gamma);
+	//}
+	/*else
+	{
+		updateCommanded(3,gammaRefNow*abs(range)*0.0002,gamma_ref);
+		updateCommanded(3,gammaNow*abs(range)*0.0002,gamma);
+	}*/
 //update theta_ref:
 	updateTransfer(3,3,Gl_num,Gl_den,theta_ref,gamma_ref,gamma);
 //enforce state limits - if theta is greater than 20 deg, do not command it to increase
@@ -217,6 +225,7 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 	ref_gamma = (10000.0*alt_cm)/abs(x_lcl);
 	if (alt_cm>h_flare)
 	{
+	flare_alt = 0;
 //glideslope tracking branch
 		//compute current glideslope angle:
 		float gammaNow = float(alt_cm)/abs(x_lcl);
@@ -224,10 +233,12 @@ void VSCL_autoland::elevator_update(int32_t x_lcl, int16_t alt_cm, float thetaNo
 		//call glideslope tracker with a constant 5 deg glideslope
 		glideslope_cmd(.08727, 
 			gammaNow,
-			thetaNow-theta1);
+			thetaNow-theta1,
+			x_lcl);
 	}
 	else
 	{
+	flare_alt = 1;
 //autoflare branch
 		flare_cmd(.01*alt_cm,
 			10.*float(alt_cm-alt_last_cm)/(float(millis()-last_update)),
@@ -364,11 +375,11 @@ void VSCL_autoland::localizer_cmd(float lambdaNow,float psiNow, float phiNow, in
 		}
 	}
 //store current value of lambda
-	if(abs(range) < 10000){
+	if(abs(range) > 5000){
 		updateCommanded(3,-1.0*lambdaNow,lambda);
 	}
 	else{
-		updateCommanded(3,-.0001*abs(range)*lambdaNow,lambda);
+		updateCommanded(3,-.0002*abs(range)*lambdaNow,lambda);
 	}
 //update psi_ref:
 	updateTransfer(3,3,G_num0,G_den0,psi_ref,lambda);
@@ -388,16 +399,20 @@ void VSCL_autoland::aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, fl
 void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
 {
 //constant arrays
-	static float Gf_num1[] = {2.60050000000000,	-5.10000000000000,	2.50000000000000},
+	/*static float Gf_num1[] = {2.60050000000000,	-5.10000000000000,	2.50000000000000},
 		Gf_den1[] = {1,-1,0},
 		Ff_num1[] = {1,	-2.44263292099462,	2.27575100243921,	-0.989813891276108,	0.182469577565696},
-		Ff_den1[] = {4.71878410637755,	-8.93150040050544,	4.23849006186207},
+		Ff_den1[] = {4.71878410637755,	-8.93150040050544,	4.23849006186207},*/
+        static float Gf_num1[] = {2.5250,-5.025,2.50},
+        Gf_den1[] = {1.0,-1.0,0.0},
+        Ff_num1[] = {.00726311442},
+        Ff_den1[] = {1.0,-1.875842502,0.8831056166},
 		TAU_INV = -0.4;
 //static arrays
-	static float theta_ref[] = {0,0,0},
-		hdot_ref[] = {0,0,0,0,0},
-		hdot_1[] = {0,0,0},
-		hdot[] = {0,0,0};
+	static float theta_ref[] = {0,0,0},//Gdlen
+		hdot_ref[] = {0},//Fnlen
+		hdot_1[] = {0,0,0},//Fdlen
+		hdot[] = {0,0,0};//Gnlen
 	//handle reset
 	if (_reset)
 	{
@@ -406,20 +421,23 @@ void VSCL_autoland::flare_cmd(float hNow, float hdotNow, float thetaNow)
 			theta_ref[ii] = 0;
 			hdot_1[ii] = 0;
 			hdot[ii] = 0;
-			hdot_ref[ii] = 0;
 		}
-		hdot_ref[3] = 0;
-		hdot_ref[4] = 0;
+		hdot_ref[0] = 0;
 		return;
 	}
 //store reference vertical speed
-	updateCommanded(5,hNow*TAU_INV,hdot_ref);
+	updateCommanded(1,hNow*TAU_INV,hdot_ref);
 //store vertical speed
 	updateCommanded(3,hdotNow,hdot);
 //prefilter
-	updateTransfer(5,3,Ff_num1,Ff_den1,hdot_1,hdot_ref);
+	updateTransfer(1,3,Ff_num1,Ff_den1,hdot_1,hdot_ref);
 //commanded pitch angle:
 	updateTransfer(3,3,Gf_num1,Gf_den1,theta_ref,hdot_1,hdot);
+//enforce state limits - if theta is greater than 10 deg, do not command it to increase
+	if(fabs(thetaNow)>.1746)
+	{
+		theta_ref[0] = constrain(theta_ref[0],-.1746,.1746);
+	}
 //call elevator command function
 	theta_cmd(theta_ref[0],thetaNow);
 }
@@ -469,7 +487,8 @@ void VSCL_autoland::throttle_update(float uNow,int16_t alt_cm)
 	}
 	else
 	{
-		airspeed_cmd(-2.0,uNow-U1);
+//		airspeed_cmd(-2.0,uNow-U1);
+                throttle_out = 0;
 	}
 }
 
@@ -503,7 +522,7 @@ void VSCL_autoland::reset()
 	_reset = 1;
 	//call functions to reset
 	theta_cmd(0,0);
-	glideslope_cmd(0,0,0);
+	glideslope_cmd(0,0,0,0);
 	elevator_update(0,0,0.0);
 	phi_cmd(0,0);
 	psi_cmd(0,0,0,0);
@@ -528,7 +547,7 @@ void VSCL_autoland::update(int32_t lat_e7, int32_t lng_e7, int16_t alt_cm,float 
 //update aileron:
 	aileron_update(x_lcl,y_lcl,psiNow,phiNow);
 //update throttle
-	throttle_update(uNow,alt_cm);
+	throttle_update(uNow,alt_cm - alt_testing_offset);
 //compute the servo outputs
 	servo_compute();
 }

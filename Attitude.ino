@@ -75,6 +75,9 @@ static void stabilize()
 			g.channel_pitch.servo_out = autoland.elevator_get();
 			g.channel_roll.servo_out = autoland.aileron_get();
 			g.channel_throttle.servo_out = autoland.throttle_get();
+			if (autoland.flare_alt){
+				gcs_send_text_P(SEVERITY_LOW,PSTR("Flare altitude!"));
+			}
 		}
 		return;
 	}

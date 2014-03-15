@@ -15,7 +15,7 @@
 //throttle steady-state (.6329)
 #define DELTAT1 63
 //altitude offset for testing glideslope/localizer in centimeters - THIS IS IMPORTANT!
-#define alt_testing_offset 1500
+#define alt_testing_offset 0
 
 /*
 void updateTransfer(int num, int den, double numtf[],double dentf[],double numval[],double denval[])
@@ -45,6 +45,7 @@ class VSCL_autoland{
 		int32_t gamma_get();//returns glideslope reference in 10^-4 radians
 		int32_t lambda_get();//returns localizer reference in 10^-4 radians
 		void reset();//function to reset the static arrays in the control computation functions
+		bool flare_alt;//return true if we got the flare altitude
 	private:
 		//last time the update() function(s) got called - used to estimate descent rate to account for inaccuracy in update time
 		int32_t last_update;
@@ -69,7 +70,7 @@ class VSCL_autoland{
 		void aileron_update(int32_t x_lcl, int32_t y_lcl,float psiNow, float phiNow);
 		// functions to compute control deflections
 		void theta_cmd(float thetaRefNow, float thetaNow);
-		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow);
+		void glideslope_cmd(float gammaRefNow, float gammaNow, float thetaNow,int32_t range);
 		void phi_cmd(float phiRefNow, float phiNow);
 		void psi_cmd(float psiRefNow, float psiNow, float phiNow, int16_t range);
 		void localizer_cmd(float lambdaNow,float psiNow, float phiNow, int16_t range);
